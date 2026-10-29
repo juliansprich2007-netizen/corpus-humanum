@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Anatomie auf Latein lernen: Knochen, Gelenke, Muskeln, Sehnen und Bänder im 3D-Modell, mit Karteikarten und Abfrage.">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+<title>Corpus Humanum</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400;1,600&family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: Atlas-Tafel links (Skelett), Arbeitsfläche rechts; auf dem Handy untereinander */
+:root{
+  --bg:#eceae4; --panel:#f7f6f2; --plate:#2f3233; --plate-ink:#d9d6cc;
+  --fg:#1f2324; --muted:#5f6564; --line:#d3d0c7;
+  --bone:#e6c98f; --bone-edge:#b89a5e; --cart:#bcd6dc; --skin:#3c4142; --hole:#2f3233;
+  --c-bones:#b07a1c; --c-joints:#167a74; --c-muscles:#b2412f; --c-ligaments:#6a4fa3; --c-terms:#4a5a6a;
+  --accent:#167a74; --good:#2f7d3a; --bad:#b2412f; --good-bg:#e1efe0; --bad-bg:#f6e2dd;
+  --f-display:"Spectral",Georgia,serif; --f-label:"Barlow Condensed","Arial Narrow",sans-serif; --f-body:"Barlow",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1a1c1d; --panel:#232627; --plate:#2a2d2e; --plate-ink:#c9c5b9; --fg:#ebe8e0; --muted:#a3a7a4; --line:#3a3e3f;
+  --skin:#363a3b; --hole:#2a2d2e; --c-bones:#e0a84a; --c-joints:#3fb8ae; --c-muscles:#e2705c; --c-ligaments:#a98be0; --c-terms:#8fa3b8;
+  --accent:#3fb8ae; --good:#6cc177; --bad:#ec7b67; --good-bg:#203325; --bad-bg:#3a2420; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1a1c1d; --panel:#232627; --plate:#2a2d2e; --plate-ink:#c9c5b9; --fg:#ebe8e0; --muted:#a3a7a4; --line:#3a3e3f;
+  --skin:#363a3b; --hole:#2a2d2e; --c-bones:#e0a84a; --c-joints:#3fb8ae; --c-muscles:#e2705c; --c-ligaments:#a98be0; --c-terms:#8fa3b8;
+  --accent:#3fb8ae; --good:#6cc177; --bad:#ec7b67; --good-bg:#203325; --bad-bg:#3a2420; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1240px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:18px}
+.brand h1{font-family:var(--f-display);font-weight:600;font-style:italic;font-size:2rem;margin:0;line-height:1.1}
+.brand p{margin:2px 0 0;color:var(--muted);font-family:var(--f-label);letter-spacing:.06em;text-transform:uppercase;font-size:.85rem}
+nav.tabs{display:flex;gap:4px;flex-wrap:wrap}
+nav.tabs button{font-family:var(--f-label);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:.95rem;border:1px solid var(--line);background:var(--panel);color:var(--fg);padding:8px 16px;border-radius:999px;cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+button{font:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:var(--f-label);font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:.85rem;padding:5px 12px;border-radius:999px;border:1.5px solid var(--line);background:transparent;color:var(--fg);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.chip .dot{width:9px;height:9px;border-radius:50%;background:var(--cc,var(--muted))}
+.chip[aria-pressed="true"]{border-color:var(--cc,var(--fg));background:color-mix(in srgb,var(--cc,var(--fg)) 14%,transparent)}
+.label{font-family:var(--f-label);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:.78rem;color:var(--muted)}
+.lat{font-family:var(--f-display);font-style:italic}
+select,input[type=text]{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg);max-width:100%}
+.btn{border:1px solid var(--fg);background:var(--fg);color:var(--bg);padding:9px 18px;border-radius:8px;cursor:pointer;font-weight:600}
+.btn.ghost{background:transparent;color:var(--fg);border-color:var(--line)}
+.btn:disabled{opacity:.4;cursor:default}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.plate{background:var(--plate);border-radius:14px;padding:12px;position:relative;color:var(--plate-ink)}
+/* 3D-Viewer */
+.viewer{display:flex;flex-direction:column;gap:8px}
+.v-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.seg{display:flex;border:1px solid #ffffff2a;border-radius:999px;overflow:hidden}
+.seg button{background:transparent;color:var(--plate-ink);border:0;padding:6px 13px;cursor:pointer;font-family:var(--f-label);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:.8rem}
+.seg button[aria-pressed="true"]{background:var(--plate-ink);color:var(--plate)}
+.v-layers{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.v-layers::before{content:"Ebenen";font-family:var(--f-label);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:.72rem;opacity:.6;margin-right:2px}
+.v-layers button,.v-iso-btn{font-family:var(--f-label);font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:.78rem;padding:4px 11px;border-radius:999px;border:1px solid #ffffff33;background:transparent;color:var(--plate-ink);cursor:pointer}
+.v-layers button[aria-pressed="true"]{background:#ffffff1f;border-color:#ffffff66}
+.v-layers button[aria-pressed="false"]{opacity:.55;text-decoration:line-through}
+.v-iso-btn{background:var(--plate-ink);color:var(--plate);border-color:var(--plate-ink)}
+.v-stage{position:relative;width:100%;height:min(74vh,800px);min-height:460px;overflow:hidden;border-radius:10px;background:radial-gradient(ellipse at 50% 30%,#4b5154 0%,#2c3032 52%,#1b1d1e 100%)}
+.v-stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.v-stage canvas:active{cursor:grabbing}
+.v-label{position:absolute;left:0;top:0;pointer-events:none;background:var(--plate-ink);color:var(--plate);font-family:var(--f-display);font-style:italic;font-weight:600;font-size:.98rem;padding:3px 11px;border-radius:6px;white-space:nowrap;box-shadow:0 4px 14px #0007}
+.v-tip{position:absolute;left:0;top:0;pointer-events:none;background:#101213e6;color:#f1ede4;padding:6px 10px;border-radius:8px;font-size:.82rem;display:flex;flex-direction:column;max-width:260px;box-shadow:0 6px 18px #0008}
+.v-tip b{font-family:var(--f-display);font-style:italic;font-weight:600;font-size:.98rem}
+.v-tip span{opacity:.75}
+.v-load{position:absolute;left:16px;right:16px;bottom:16px;display:grid;gap:6px;font-size:.85rem}
+.v-load-b{height:4px;border-radius:2px;background:#ffffff22;overflow:hidden}.v-load-b i{display:block;height:100%;width:0;background:var(--plate-ink);transition:width .2s}
+.v-iso{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:#0009;padding:6px 8px 6px 12px;border-radius:10px;font-family:var(--f-display);font-style:italic}
+.v-iso-x{font:600 .78rem var(--f-label);letter-spacing:.05em;text-transform:uppercase;font-style:normal;border:0;border-radius:999px;padding:5px 11px;background:var(--plate-ink);color:var(--plate);cursor:pointer}
+.v-foot{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.8rem}
+.v-hint{opacity:.7}
+.v-credit{font-size:.7rem;opacity:.5;margin:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;min-width:0}
+.detail h2{font-family:var(--f-display);font-style:italic;font-weight:600;font-size:1.8rem;margin:2px 0 0;line-height:1.15;text-wrap:balance}
+.detail .de{font-size:1.1rem;color:var(--muted);margin:2px 0 12px}
+.detail dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;margin:0}
+.detail dt{font-family:var(--f-label);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:.78rem;color:var(--muted);padding-top:2px}
+.detail dd{margin:0}
+.mn{margin-top:12px;padding:10px 12px;border-left:3px solid var(--cc,var(--accent));background:color-mix(in srgb,var(--cc,var(--accent)) 9%,transparent);border-radius:0 8px 8px 0;font-size:.93rem}
+.catbadge{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-label);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:.78rem;color:var(--cc)}
+.catbadge::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--cc)}
+.list{margin-top:14px;max-height:420px;overflow:auto;border-top:1px solid var(--line)}
+.list h4{font-family:var(--f-label);letter-spacing:.08em;text-transform:uppercase;font-size:.78rem;color:var(--muted);margin:12px 0 4px;position:sticky;top:0;background:var(--panel);padding:2px 0}
+.list button{display:flex;width:100%;text-align:left;gap:10px;justify-content:space-between;align-items:baseline;background:none;border:0;border-radius:6px;padding:5px 8px;cursor:pointer;color:var(--fg)}
+.list button:hover,.list button.on{background:color-mix(in srgb,var(--fg) 8%,transparent)}
+.list button .lat{font-size:1.02rem}
+.list button small{color:var(--muted);text-align:right}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.toolbar input[type=text]{flex:1 1 180px}
+/* Karteikarten */
+.card-stage{perspective:1400px;max-width:620px;margin:0 auto}
+.card{position:relative;min-height:300px;transform-style:preserve-3d;transition:transform .45s;cursor:pointer}
+.card.flip{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;border-radius:16px;padding:28px;display:flex;flex-direction:column;justify-content:center;gap:8px;background:var(--panel);border:1px solid var(--line);box-shadow:0 10px 30px -18px #0006;overflow:auto}
+.face.back{transform:rotateY(180deg)}
+.face .big{font-family:var(--f-display);font-size:2.1rem;line-height:1.15;text-wrap:balance}
+@media (prefers-reduced-motion:reduce){.card{transition:none}}
+.card-actions{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.btn.good{background:var(--good);border-color:var(--good);color:#fff}
+.btn.bad{background:var(--bad);border-color:var(--bad);color:#fff}
+.boxes{display:flex;gap:6px;justify-content:center;margin:14px 0 4px;flex-wrap:wrap}
+.boxes span{font-family:var(--f-label);font-size:.8rem;letter-spacing:.05em;padding:3px 9px;border-radius:6px;background:color-mix(in srgb,var(--fg) 7%,transparent);font-variant-numeric:tabular-nums}
+.kbd{font-size:.8rem;color:var(--muted);text-align:center;margin-top:8px}
+/* Quiz */
+.setup{display:grid;gap:14px}
+.setup .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.q-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.progress{height:6px;border-radius:3px;background:color-mix(in srgb,var(--fg) 10%,transparent);overflow:hidden;margin-bottom:16px}
+.progress i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.q-prompt{font-size:1.05rem;color:var(--muted);margin-bottom:4px}
+.q-term{font-family:var(--f-display);font-size:1.9rem;line-height:1.2;margin-bottom:16px;text-wrap:balance}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);cursor:pointer;font-size:1rem}
+.opt:hover:not(:disabled){border-color:var(--fg)}
+.opt.right{border-color:var(--good);background:var(--good-bg)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-bg)}
+.opt:disabled{cursor:default}
+.opt kbd{font-family:var(--f-label);color:var(--muted);margin-right:8px}
+.feedback{margin-top:14px;padding:12px 14px;border-radius:10px;font-size:.95rem}
+.feedback.ok{background:var(--good-bg)} .feedback.no{background:var(--bad-bg)}
+.typebox{display:flex;gap:8px;flex-wrap:wrap} .typebox input{flex:1 1 220px;font-size:1.1rem}
+.score{font-family:var(--f-display);font-size:3rem;font-weight:600;font-variant-numeric:tabular-nums}
+.stats{display:grid;gap:14px}
+.stat-row{display:grid;grid-template-columns:150px minmax(0,1fr) 110px;gap:12px;align-items:center}
+@media (max-width:560px){.stat-row{grid-template-columns:minmax(0,1fr) 90px}.stat-row .bar{grid-column:1/-1;order:3}}
+.bar{height:12px;border-radius:6px;background:color-mix(in srgb,var(--fg) 9%,transparent);overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.num{font-variant-numeric:tabular-nums;text-align:right;font-family:var(--f-label);font-size:.95rem}
+.muted{color:var(--muted)}
+.wronglist{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+.wronglist li{padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--fg) 5%,transparent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Corpus Humanum</h1>
+      <p>Knochen · Gelenke · Muskeln · Sehnen &amp; Bänder · Fachbegriffe</p>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="atlas" aria-selected="true">Atlas</button>
+      <button role="tab" data-tab="learn" aria-selected="false">Lernen</button>
+      <button role="tab" data-tab="quiz" aria-selected="false">Abfrage</button>
+      <button role="tab" data-tab="stats" aria-selected="false">Fortschritt</button>
+    </nav>
+  </header>
+
+  <!-- ATLAS -->
+  <section id="tab-atlas">
+    <div class="toolbar">
+      <div class="chips" id="atlas-cats"></div>
+      <input type="text" id="atlas-search" placeholder="Suchen: z. B. Femur, Kniescheibe, Bizeps …">
+    </div>
+    <div class="grid">
+      <div class="plate" id="atlas-plate"></div>
+      <div class="panel">
+        <div class="detail" id="atlas-detail"></div>
+        <div class="list" id="atlas-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LERNEN -->
+  <section id="tab-learn" hidden>
+    <div class="panel" style="margin-bottom:18px">
+      <div class="setup">
+        <div class="row"><span class="label" style="min-width:90px">Thema</span><div class="chips" id="learn-cats"></div></div>
+        <div class="row"><span class="label" style="min-width:90px">Region</span><select id="learn-region"></select>
+          <span class="label" style="margin-left:12px">Vorderseite</span>
+          <select id="learn-dir"><option value="lat">Latein zeigen</option><option value="de">Deutsch zeigen</option></select>
+          <label style="display:flex;gap:6px;align-items:center;margin-left:12px"><input type="checkbox" id="learn-onlynew"> nur noch nicht gekonnte</label>
+        </div>
+      </div>
+    </div>
+    <div id="learn-area"></div>
+  </section>
+
+  <!-- ABFRAGE -->
+  <section id="tab-quiz" hidden>
+    <div id="quiz-setup" class="panel">
+      <div class="setup">
+        <div class="row"><span class="label" style="min-width:90px">Thema</span><div class="chips" id="quiz-cats"></div></div>
+        <div class="row"><span class="label" style="min-width:90px">Region</span><select id="quiz-region"></select></div>
+        <div class="row"><span class="label" style="min-width:90px">Fragetyp</span><div class="chips" id="quiz-modes"></div></div>
+        <div class="row"><span class="label" style="min-width:90px">Anzahl</span>
+          <select id="quiz-n"><option>10</option><option selected>20</option><option>30</option><option value="999">Alle</option></select>
+          <span class="muted" id="quiz-pool"></span>
+        </div>
+        <div class="row"><button class="btn" id="quiz-start">Abfrage starten</button></div>
+      </div>
+    </div>
+    <div id="quiz-run" hidden>
+      <div class="grid" id="quiz-grid">
+        <div class="plate" id="quiz-plate"></div>
+        <div class="panel" id="quiz-panel"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FORTSCHRITT -->
+  <section id="tab-stats" hidden>
+    <div class="panel">
+      <div class="stats" id="stats"></div>
+      <p class="muted" style="margin-top:18px;font-size:.9rem">„Gekonnt“ heißt: in Karteikarten oder Abfrage mindestens dreimal hintereinander richtig. Der Fortschritt wird nur in diesem Browser gespeichert.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px"><button class="btn ghost" id="reset">Fortschritt zurücksetzen</button><span id="reset-confirm" hidden><button class="btn bad" id="reset-yes">Ja, alles löschen</button> <button class="btn ghost" id="reset-no">Abbrechen</button></span></div>
+    </div>
+  </section>
+</div>
+
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+  "three-mesh-bvh":"https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.7.6/build/index.module.js"
+}}
+</script>
+<script type="module">
+/* ================= DATEN =================
+   Positionen (x,y) beziehen sich auf die Skelett-Zeichnung (viewBox 0 0 300 665).
+   view: a = Ansicht von vorne, p = von hinten. Fehlt x, gibt es keinen Punkt auf der Figur. */
+const CATS = {
+  bones:{name:'Knochen',color:'--c-bones'},
+  joints:{name:'Gelenke',color:'--c-joints'},
+  muscles:{name:'Muskeln',color:'--c-muscles'},
+  ligaments:{name:'Sehnen & Bänder',color:'--c-ligaments'},
+  terms:{name:'Fachbegriffe',color:'--c-terms'}
+};
+const ITEMS = [];
+function add(cat, rows, map){ rows.forEach(r=>{ const o = map(r); o.cat=cat; o.id=cat+'-'+ITEMS.length; ITEMS.push(o); }); }
+
+// Knochen: [Latein, Deutsch, Region, x, y, Ansicht, Info, Merkhilfe]
+add('bones',[
+ ['Cranium','Schädel','Schädel',150,22,'a','Besteht aus Hirnschädel (Neurocranium) und Gesichtsschädel (Viscerocranium); insgesamt 22 Knochen (ohne Gehörknöchelchen).'],
+ ['Os frontale','Stirnbein','Schädel',150,32,'a','Bildet die Stirn und das Dach der Augenhöhlen.'],
+ ['Os parietale','Scheitelbein','Schädel',171,30,'a','Paariger Knochen des Schädeldachs, verbunden über die Pfeilnaht (Sutura sagittalis).'],
+ ['Os temporale','Schläfenbein','Schädel',178,58,'a','Enthält Mittel- und Innenohr; trägt den Processus mastoideus (Warzenfortsatz).'],
+ ['Os occipitale','Hinterhauptbein','Schädel',150,42,'p','Umschließt das Foramen magnum, durch das das Rückenmark austritt.'],
+ ['Os sphenoidale','Keilbein','Schädel',172,66,'a','Zentraler Schädelbasisknochen; trägt die Sella turcica (Türkensattel) mit der Hypophyse.'],
+ ['Os ethmoidale','Siebbein','Schädel',150,57,'a','Liegt zwischen den Augenhöhlen; Siebplatte (Lamina cribrosa) für die Riechfäden.'],
+ ['Os nasale','Nasenbein','Schädel',150,66,'a','Paariger kleiner Knochen des Nasenrückens.'],
+ ['Os lacrimale','Tränenbein','Schädel',156,62,'a','Kleinster Gesichtsknochen, in der inneren Augenhöhlenwand.'],
+ ['Os zygomaticum','Jochbein','Schädel',168,72,'a','Wangenknochen; bildet mit dem Os temporale den Jochbogen (Arcus zygomaticus).'],
+ ['Maxilla','Oberkiefer','Schädel',157,80,'a','Trägt die oberen Zähne und bildet den Boden der Augenhöhle; enthält die Kieferhöhle (Sinus maxillaris).'],
+ ['Mandibula','Unterkiefer','Schädel',165,93,'a','Einziger beweglicher Schädelknochen; bildet mit dem Os temporale das Kiefergelenk.'],
+ ['Os hyoideum','Zungenbein','Hals',150,110,'a','Hufeisenförmiger Knochen ohne gelenkige Verbindung zu anderen Knochen.'],
+ ['Atlas (C1)','Erster Halswirbel','Wirbelsäule',150,100,'p','Hat keinen Wirbelkörper; trägt den Schädel.','Atlas trägt in der Sage die Weltkugel – hier den Kopf.'],
+ ['Axis (C2)','Zweiter Halswirbel','Wirbelsäule',150,107,'p','Besitzt den Dens axis (Zahn), um den sich der Atlas dreht.'],
+ ['Vertebrae cervicales','Halswirbel (C1–C7)','Wirbelsäule',150,119,'a','7 Halswirbel; erkennbar an den Querfortsatzlöchern (Foramina transversaria).','Frühstück um 7, Mittagessen um 12, Abendessen um 5: 7 Hals-, 12 Brust-, 5 Lendenwirbel.'],
+ ['Vertebra prominens (C7)','Siebter Halswirbel','Wirbelsäule',150,126,'p','Längster, gut tastbarer Dornfortsatz am Übergang Hals–Brust.'],
+ ['Vertebrae thoracicae','Brustwirbel (Th1–Th12)','Wirbelsäule',150,190,'p','12 Brustwirbel; tragen Gelenkflächen für die Rippen.'],
+ ['Vertebrae lumbales','Lendenwirbel (L1–L5)','Wirbelsäule',150,276,'a','5 Lendenwirbel mit den größten Wirbelkörpern, da sie das meiste Gewicht tragen.'],
+ ['Os sacrum','Kreuzbein','Wirbelsäule',150,318,'a','Entsteht aus 5 verschmolzenen Sakralwirbeln; Teil des Beckenrings.'],
+ ['Os coccygis','Steißbein','Wirbelsäule',150,347,'p','3–5 verkümmerte, verschmolzene Wirbel; Rest eines Schwanzes.'],
+ ['Sternum','Brustbein','Thorax',150,160,'a','Platter Knochen aus Manubrium, Corpus und Processus xiphoideus; enthält rotes Knochenmark.'],
+ ['Manubrium sterni','Handgriff des Brustbeins','Thorax',150,141,'a','Oberster Teil des Sternums; Gelenk mit Clavicula und 1. Rippe.'],
+ ['Corpus sterni','Brustbeinkörper','Thorax',150,190,'a','Mittelteil des Brustbeins; Ansatz der Rippenknorpel 2–7.'],
+ ['Processus xiphoideus','Schwertfortsatz','Thorax',150,226,'a','Unterstes, knorpeliges Ende des Brustbeins.'],
+ ['Costae verae','Echte Rippen (1–7)','Thorax',190,168,'a','Direkt über eigenen Knorpel mit dem Sternum verbunden.'],
+ ['Costae spuriae','Falsche Rippen (8–10)','Thorax',192,222,'a','Über den Rippenbogen (Arcus costalis) indirekt mit dem Sternum verbunden.'],
+ ['Costae fluctuantes','Freie Rippen (11–12)','Thorax',196,252,'p','Enden frei in der Bauchwand, ohne Verbindung zum Sternum.'],
+ ['Clavicula','Schlüsselbein','Schultergürtel',182,126,'a','S-förmiger Knochen zwischen Sternum und Acromion; häufigste Fraktur im Kindesalter.'],
+ ['Scapula','Schulterblatt','Schultergürtel',190,175,'p','Dreieckiger platter Knochen auf der Rückseite des Thorax.'],
+ ['Spina scapulae','Schulterblattgräte','Schultergürtel',190,145,'p','Knochenleiste auf der Rückseite der Scapula; trennt Fossa supra- und infraspinata.'],
+ ['Acromion','Schulterhöhe','Schultergürtel',208,129,'p','Seitliches Ende der Spina scapulae; bildet das Schulterdach.'],
+ ['Processus coracoideus','Rabenschnabelfortsatz','Schultergürtel',199,141,'a','Hakenförmiger Fortsatz der Scapula; Ursprung des kurzen Bizepskopfes.'],
+ ['Humerus','Oberarmknochen','Obere Extremität',217,200,'a','Langer Röhrenknochen zwischen Schulter und Ellenbogen.'],
+ ['Caput humeri','Oberarmkopf','Obere Extremität',210,143,'p','Gelenkkopf des Schultergelenks.'],
+ ['Epicondylus medialis humeri','Innerer Oberarmknorren','Obere Extremität',212,252,'a','Hier verläuft der N. ulnaris („Musikantenknochen“).'],
+ ['Epicondylus lateralis humeri','Äußerer Oberarmknorren','Obere Extremität',232,250,'a','Ursprung der Handstrecker („Tennisellenbogen“).'],
+ ['Radius','Speiche','Obere Extremität',236,300,'a','Liegt auf der Daumenseite des Unterarms.','Radius = Daumen: „Der Daumen dreht das Rad.“'],
+ ['Ulna','Elle','Obere Extremität',220,305,'a','Liegt auf der Kleinfingerseite des Unterarms.'],
+ ['Olecranon','Ellenbogenhöcker','Obere Extremität',216,257,'p','Oberes Ende der Ulna; Ansatz des M. triceps brachii.'],
+ ['Ossa carpi','Handwurzelknochen','Hand',235,355,'a','8 Knochen in zwei Reihen.','Ein Kahn, der fuhr im Mondenschein dreieckig um das Erbsenbein; Vieleck groß, Vieleck klein, der Kopf, der muss beim Haken sein.'],
+ ['Os scaphoideum','Kahnbein (Hand)','Hand',240,352,'a','Häufigster gebrochener Handwurzelknochen (Sturz auf die Hand).'],
+ ['Os lunatum','Mondbein','Hand',235,352,'a','Proximale Reihe, Mitte.'],
+ ['Os triquetrum','Dreiecksbein','Hand',230.5,352,'a','Proximale Reihe, kleinfingerseitig.'],
+ ['Os pisiforme','Erbsenbein','Hand',226,351,'a','Sesambein in der Sehne des M. flexor carpi ulnaris.'],
+ ['Os trapezium','Großes Vieleckbein','Hand',242,358,'a','Bildet mit dem 1. Mittelhandknochen das Daumensattelgelenk.'],
+ ['Os trapezoideum','Kleines Vieleckbein','Hand',238,359,'a','Distale Reihe, unter dem Zeigefinger.'],
+ ['Os capitatum','Kopfbein','Hand',233.5,359,'a','Größter Handwurzelknochen.'],
+ ['Os hamatum','Hakenbein','Hand',229,358,'a','Trägt einen Haken (Hamulus), kleinfingerseitig.'],
+ ['Ossa metacarpi','Mittelhandknochen','Hand',238,374,'a','5 Röhrenknochen der Mittelhand, von I (Daumen) bis V nummeriert.'],
+ ['Phalanges proximales (manus)','Fingergrundglieder','Hand',240,391,'a','Erstes Fingerglied, an die Mittelhand anschließend.'],
+ ['Phalanges mediae (manus)','Fingermittelglieder','Hand',240,400,'a','Der Daumen hat kein Mittelglied.'],
+ ['Phalanges distales (manus)','Fingerendglieder','Hand',240,408,'a','Tragen die Fingernägel.'],
+ ['Os coxae','Hüftbein','Becken',201,318,'a','Entsteht aus Os ilium, Os ischii und Os pubis, die in der Hüftpfanne verschmelzen.'],
+ ['Os ilium','Darmbein','Becken',186,302,'a','Großer Beckenschaufel-Knochen; oberer Rand ist die Crista iliaca (Darmbeinkamm).'],
+ ['Spina iliaca anterior superior','Vorderer oberer Darmbeinstachel','Becken',204,312,'a','Gut tastbarer Knochenpunkt; Ursprung des M. sartorius.'],
+ ['Os ischii','Sitzbein','Becken',172,358,'a','Trägt den Sitzbeinhöcker (Tuber ischiadicum), auf dem wir sitzen.'],
+ ['Os pubis','Schambein','Becken',160,346,'a','Beide Schambeine sind über die Symphyse verbunden.'],
+ ['Acetabulum','Hüftpfanne','Becken',186,333,'a','Gelenkpfanne des Hüftgelenks.'],
+ ['Femur','Oberschenkelknochen','Untere Extremität',188,420,'a','Längster und stärkster Knochen des Körpers.'],
+ ['Caput femoris','Oberschenkelkopf','Untere Extremität',179,343,'a','Kugelförmiger Gelenkkopf des Hüftgelenks.'],
+ ['Collum femoris','Oberschenkelhals','Untere Extremität',188,347,'a','Typische Bruchstelle im Alter (Schenkelhalsfraktur).'],
+ ['Trochanter major','Großer Rollhügel','Untere Extremität',199,348,'a','Ansatz der kleinen Gesäßmuskeln; gut tastbar.'],
+ ['Patella','Kniescheibe','Untere Extremität',183,492,'a','Größtes Sesambein des Körpers, in der Quadrizepssehne.'],
+ ['Tibia','Schienbein','Untere Extremität',179,560,'a','Kräftiger, innen liegender Unterschenkelknochen.'],
+ ['Tuberositas tibiae','Schienbeinrauigkeit','Untere Extremität',180,514,'a','Ansatz des Ligamentum patellae.'],
+ ['Fibula','Wadenbein','Untere Extremität',196,560,'a','Dünner, außen liegender Unterschenkelknochen.'],
+ ['Malleolus medialis','Innenknöchel','Untere Extremität',171,609,'a','Unteres Ende der Tibia.'],
+ ['Malleolus lateralis','Außenknöchel','Untere Extremität',198,610,'a','Unteres Ende der Fibula; steht tiefer als der Innenknöchel.'],
+ ['Ossa tarsi','Fußwurzelknochen','Fuß',184,622,'a','7 Knochen.','Theo Cooks Nudeln Mit Ingwer Lecker Würzig: Talus, Calcaneus, Naviculare, Cuneiforme mediale/intermedium/laterale, Würfelbein (Cuboideum).'],
+ ['Talus','Sprungbein','Fuß',183,616,'a','Überträgt das Körpergewicht vom Unterschenkel auf den Fuß; kein Muskelansatz.'],
+ ['Calcaneus','Fersenbein','Fuß',184,630,'p','Größter Fußwurzelknochen; Ansatz der Achillessehne am Tuber calcanei.'],
+ ['Os naviculare','Kahnbein (Fuß)','Fuß',177,622,'a','Liegt vor dem Talus auf der Fußinnenseite.'],
+ ['Os cuboideum','Würfelbein','Fuß',191,623,'a','Auf der Fußaußenseite vor dem Calcaneus.'],
+ ['Ossa cuneiformia','Keilbeine','Fuß',179,627,'a','Drei Keilbeine (mediale, intermedium, laterale) vor dem Os naviculare.'],
+ ['Ossa metatarsi','Mittelfußknochen','Fuß',186,637,'a','5 Mittelfußknochen; die Köpfchen bilden den Fußballen.'],
+ ['Phalanges (pedis)','Zehenglieder','Fuß',186,651,'a','Die Großzehe (Hallux) hat nur zwei Glieder.'],
+],r=>({lat:r[0],de:r[1],region:r[2],x:r[3],y:r[4],view:r[5],info:r[6],mn:r[7]}));
+
+// Gelenke: [Latein, Deutsch, Region, Gelenktyp, beteiligte Knochen, x, y, Ansicht, Info]
+add('joints',[
+ ['Articulatio temporomandibularis','Kiefergelenk','Kopf','Dreh-Gleit-Gelenk (mit Discus articularis)','Mandibula, Os temporale',174,80,'a','Ermöglicht Öffnen, Schließen, Vor- und Seitbewegung beim Kauen.'],
+ ['Articulatio atlantooccipitalis','Oberes Kopfgelenk','Wirbelsäule','Eigelenk (Ellipsoidgelenk)','Os occipitale, Atlas',150,96,'p','„Ja-Gelenk“: Nicken.'],
+ ['Articulatio atlantoaxialis','Unteres Kopfgelenk','Wirbelsäule','Zapfengelenk (Radgelenk)','Atlas, Axis (Dens axis)',150,104,'p','„Nein-Gelenk“: Kopfdrehen.'],
+ ['Articulationes zygapophysiales','Wirbelbogengelenke (Facettengelenke)','Wirbelsäule','Planes Gelenk','Benachbarte Wirbelbögen',156,242,'p','Führen die Bewegung der Wirbelsäule.'],
+ ['Symphysis intervertebralis','Bandscheibenverbindung','Wirbelsäule','Symphyse (Knorpelhaft)','Wirbelkörper, Discus intervertebralis',150,265,'a','Bandscheiben aus Anulus fibrosus und Nucleus pulposus; Bandscheibenvorfall bei Riss des Faserrings.'],
+ ['Articulationes costovertebrales','Rippen-Wirbel-Gelenke','Thorax','Planes Gelenk / Drehgelenk','Rippen, Brustwirbel',158,190,'p','Ermöglichen das Heben und Senken der Rippen beim Atmen.'],
+ ['Articulatio sternoclavicularis','Inneres Schlüsselbeingelenk','Schultergürtel','Sattelgelenk (funktionell Kugelgelenk, mit Discus)','Sternum, Clavicula',157,131,'a','Einzige gelenkige Verbindung von Arm und Rumpf.'],
+ ['Articulatio acromioclavicularis','Schultereckgelenk (äußeres Schlüsselbeingelenk)','Schultergürtel','Planes Gelenk','Acromion, Clavicula',205,127,'a','Typische Verletzung: „Schultereckgelenksprengung“ beim Sturz auf die Schulter.'],
+ ['Articulatio humeri','Schultergelenk','Obere Extremität','Kugelgelenk','Caput humeri, Cavitas glenoidalis (Scapula)',210,142,'a','Beweglichstes Gelenk des Körpers, aber muskelgeführt und daher anfällig für Luxationen.'],
+ ['Articulatio cubiti','Ellenbogengelenk','Obere Extremität','Zusammengesetztes Gelenk: Scharnier- + Rad- + Kugelgelenk','Humerus, Ulna, Radius',224,255,'a','Drei Teilgelenke in einer Kapsel: humeroulnar (Scharnier), humeroradial (Kugel), radioulnar proximal (Rad).'],
+ ['Articulatio radioulnaris proximalis','Oberes Speichen-Ellen-Gelenk','Obere Extremität','Zapfengelenk (Radgelenk)','Radius, Ulna',229,263,'a','Mit dem unteren Gelenk zuständig für Pronation und Supination.'],
+ ['Articulatio radioulnaris distalis','Unteres Speichen-Ellen-Gelenk','Obere Extremität','Zapfengelenk (Radgelenk)','Radius, Ulna',231,346,'a','Der Radius dreht sich hier um die Ulna.'],
+ ['Articulatio radiocarpalis','Proximales Handgelenk','Hand','Eigelenk (Ellipsoidgelenk)','Radius, Os scaphoideum, Os lunatum, Os triquetrum',236,349,'a','Ermöglicht Beugen/Strecken und Seitneigung der Hand.'],
+ ['Articulatio mediocarpalis','Distales Handgelenk','Hand','Verzahntes Scharniergelenk','Proximale und distale Handwurzelreihe',236,356,'a','Liegt zwischen den beiden Handwurzelreihen.'],
+ ['Articulatio carpometacarpalis pollicis','Daumensattelgelenk','Hand','Sattelgelenk','Os trapezium, Os metacarpi I',245,362,'a','Ermöglicht die Opposition des Daumens (Greifen); häufig Arthrose (Rhizarthrose).'],
+ ['Articulationes metacarpophalangeae','Fingergrundgelenke','Hand','Kugelgelenk (durch Bänder eingeschränkt)','Ossa metacarpi, Phalanges proximales',240,386,'a','Beugen, Strecken, Spreizen der Finger.'],
+ ['Articulationes interphalangeae manus','Fingermittel- und -endgelenke','Hand','Scharniergelenk','Phalanges',240,397,'a','Nur Beugung und Streckung möglich.'],
+ ['Articulatio sacroiliaca','Kreuz-Darmbein-Gelenk (ISG)','Becken','Amphiarthrose (straffes Gelenk)','Os sacrum, Os ilium',162,310,'a','Kaum beweglich; durch starke Bänder gesichert.'],
+ ['Symphysis pubica','Schambeinfuge','Becken','Symphyse (Faserknorpel)','Ossa pubis',150,350,'a','Lockert sich in der Schwangerschaft.'],
+ ['Articulatio coxae','Hüftgelenk','Untere Extremität','Kugelgelenk (Nussgelenk)','Caput femoris, Acetabulum',181,340,'a','Die Pfanne umschließt den Kopf über den Äquator hinaus – sehr stabil.'],
+ ['Articulatio genus','Kniegelenk','Untere Extremität','Drehscharniergelenk (Bikondylengelenk)','Femur, Tibia, Patella',183,501,'a','Größtes Gelenk des Körpers; mit Menisken und Kreuzbändern.'],
+ ['Articulatio femoropatellaris','Kniescheibengelenk','Untere Extremität','Gleitgelenk','Femur, Patella',183,486,'a','Teil des Kniegelenks; die Patella gleitet in der Rinne des Femurs.'],
+ ['Articulatio tibiofibularis','Schienbein-Wadenbein-Gelenk','Untere Extremität','Planes Gelenk (Amphiarthrose)','Tibia, Fibula',195,508,'a','Proximale Verbindung der Unterschenkelknochen; distal nur Bandhaft (Syndesmose).'],
+ ['Articulatio talocruralis','Oberes Sprunggelenk (OSG)','Fuß','Scharniergelenk','Tibia, Fibula (Malleolengabel), Talus',184,611,'a','Heben und Senken des Fußes (Dorsalextension / Plantarflexion).'],
+ ['Articulatio subtalaris','Unteres Sprunggelenk (USG)','Fuß','Zapfengelenk (funktionell)','Talus, Calcaneus, Os naviculare',186,620,'a','Kippen des Fußes nach innen und außen (Supination / Pronation).'],
+ ['Articulationes metatarsophalangeae','Zehengrundgelenke','Fuß','Kugelgelenk (eingeschränkt)','Ossa metatarsi, Phalanges proximales',186,646,'a','Beim Abrollen stark belastet; Hallux valgus am Großzehengrundgelenk.'],
+],r=>({lat:r[0],de:r[1],region:r[2],type:r[3],parts:r[4],x:r[5],y:r[6],view:r[7],info:r[8]}));
+add('joints',[
+ ['Articulatio spheroidea','Kugelgelenk','Gelenktypen','3 Freiheitsgrade','Beispiele: Schulter, Hüfte'],
+ ['Ginglymus','Scharniergelenk','Gelenktypen','1 Freiheitsgrad','Beispiele: Fingermittel-/endgelenke, oberes Sprunggelenk'],
+ ['Articulatio trochoidea','Zapfengelenk / Radgelenk','Gelenktypen','1 Freiheitsgrad (Drehung)','Beispiele: Atlas–Axis, Radius–Ulna'],
+ ['Articulatio sellaris','Sattelgelenk','Gelenktypen','2 Freiheitsgrade','Beispiel: Daumensattelgelenk'],
+ ['Articulatio ellipsoidea','Eigelenk (Ellipsoidgelenk)','Gelenktypen','2 Freiheitsgrade','Beispiele: proximales Handgelenk, oberes Kopfgelenk'],
+ ['Articulatio plana','Planes Gelenk','Gelenktypen','Kleine Gleitbewegungen','Beispiele: Wirbelbogengelenke, Schultereckgelenk'],
+ ['Articulatio bicondylaris','Bikondylengelenk (Drehscharniergelenk)','Gelenktypen','2 Freiheitsgrade','Beispiel: Kniegelenk'],
+ ['Capsula articularis','Gelenkkapsel','Gelenkaufbau','Aufbau','Außen Membrana fibrosa (straff), innen Membrana synovialis (bildet die Synovia).'],
+ ['Cavitas articularis','Gelenkhöhle','Gelenkaufbau','Aufbau','Spaltraum zwischen den Gelenkflächen, gefüllt mit Synovia.'],
+ ['Cartilago articularis','Gelenkknorpel','Gelenkaufbau','Aufbau','Hyaliner Knorpel ohne Gefäße; wird über die Synovia ernährt.'],
+ ['Synovia','Gelenkschmiere','Gelenkaufbau','Aufbau','Ernährt den Knorpel und verringert die Reibung.'],
+ ['Caput articulare','Gelenkkopf','Gelenkaufbau','Aufbau','Konvexer Gelenkpartner.'],
+ ['Fossa articularis','Gelenkpfanne','Gelenkaufbau','Aufbau','Konkaver Gelenkpartner.'],
+ ['Meniscus medialis / lateralis','Innen- / Außenmeniskus','Gelenkaufbau','Aufbau','Halbmondförmige Faserknorpelscheiben im Knie; der Innenmeniskus ist mit dem Innenband verwachsen und reißt öfter.'],
+ ['Discus articularis','Gelenkscheibe','Gelenkaufbau','Aufbau','Teilt die Gelenkhöhle vollständig (z. B. Kiefergelenk, Sternoklavikulargelenk).'],
+ ['Labrum articulare','Gelenklippe','Gelenkaufbau','Aufbau','Faserknorpeliger Ring, der die Pfanne vergrößert (Schulter, Hüfte).'],
+ ['Bursa synovialis','Schleimbeutel','Gelenkaufbau','Aufbau','Polstert Sehnen und Muskeln gegen Knochen ab.'],
+ ['Diarthrosis','Echtes Gelenk','Gelenkaufbau','Einteilung','Hat Gelenkspalt, Kapsel und Synovia.'],
+ ['Synarthrosis','Unechtes Gelenk (Haft)','Gelenkaufbau','Einteilung','Ohne Gelenkspalt: Bandhaft (Syndesmose), Knorpelhaft (Synchondrose), Knochenhaft (Synostose).'],
+],r=>({lat:r[0],de:r[1],region:r[2],type:r[3],info:r[4]}));
+
+// Muskeln: [Latein, Deutsch, Region, Ursprung, Ansatz, Funktion, x, y, Ansicht]
+add('muscles',[
+ ['M. occipitofrontalis (Venter frontalis)','Stirnmuskel','Kopf','Galea aponeurotica','Haut der Augenbrauen','Stirn runzeln, Augenbrauen heben',159,36,'a'],
+ ['M. orbicularis oculi','Augenringmuskel','Kopf','Innerer Augenwinkel','Haut um das Auge','Lidschluss, Zukneifen der Augen',167,56,'a'],
+ ['M. orbicularis oris','Mundringmuskel','Kopf','Muskeln um den Mund','Haut der Lippen','Mundschluss, Lippen spitzen',150,89,'a'],
+ ['M. buccinator','Wangenmuskel','Kopf','Ober- und Unterkiefer','Mundwinkel','Wange gegen die Zähne pressen, Pusten',162,86,'a'],
+ ['M. masseter','Kaumuskel (Kauer)','Kopf','Arcus zygomaticus','Kieferwinkel (Mandibula)','Kiefer schließen (stärkster Kaumuskel)',171,87,'a'],
+ ['M. temporalis','Schläfenmuskel','Kopf','Fossa temporalis','Processus coronoideus der Mandibula','Kiefer schließen, zurückziehen',180,47,'a'],
+ ['M. sternocleidomastoideus','Kopfwender','Hals','Sternum und Clavicula','Processus mastoideus (Os temporale)','Kopf zur Gegenseite drehen, zur gleichen Seite neigen',163,114,'a'],
+ ['Mm. scaleni','Treppenmuskeln','Hals','Querfortsätze der Halswirbel','1. und 2. Rippe','Rippen heben (Atemhilfsmuskel), Hals neigen',169,121,'a'],
+ ['M. trapezius','Trapezmuskel (Kapuzenmuskel)','Rücken','Os occipitale, Dornfortsätze C1–Th12','Clavicula, Acromion, Spina scapulae','Schulterblatt heben, senken und zur Wirbelsäule ziehen',172,140,'p'],
+ ['M. levator scapulae','Schulterblattheber','Rücken','Querfortsätze C1–C4','Oberer Schulterblattwinkel','Schulterblatt heben',164,124,'p'],
+ ['Mm. rhomboidei','Rautenmuskeln','Rücken','Dornfortsätze C6–Th4','Innenrand der Scapula','Schulterblatt zur Wirbelsäule ziehen',164,166,'p'],
+ ['M. latissimus dorsi','Breiter Rückenmuskel','Rücken','Dornfortsätze Th7–L5, Fascia thoracolumbalis, Crista iliaca','Crista tuberculi minoris humeri','Arm heranziehen, nach innen drehen, nach hinten führen („Schürzengriff“)',194,236,'p'],
+ ['M. erector spinae','Rückenstrecker (autochthone Rückenmuskulatur)','Rücken','Kreuzbein, Becken, Wirbel','Wirbel, Rippen, Hinterhaupt','Wirbelsäule aufrichten und strecken',159,282,'p'],
+ ['M. quadratus lumborum','Quadratischer Lendenmuskel','Rücken','Crista iliaca','12. Rippe, Querfortsätze L1–L4','Rumpf zur Seite neigen',171,296,'p'],
+ ['M. pectoralis major','Großer Brustmuskel','Brust','Clavicula, Sternum, Rippenknorpel, Rektusscheide','Crista tuberculi majoris humeri','Arm heranziehen (Adduktion), nach innen drehen, nach vorne heben',176,158,'a'],
+ ['M. pectoralis minor','Kleiner Brustmuskel','Brust','3.–5. Rippe','Processus coracoideus','Schulterblatt senken, Atemhilfsmuskel',193,156,'a'],
+ ['M. serratus anterior','Vorderer Sägemuskel','Brust','1.–9. Rippe','Innenrand der Scapula','Schulterblatt nach vorne ziehen, Arm über 90° heben',203,212,'a'],
+ ['Mm. intercostales externi','Äußere Zwischenrippenmuskeln','Brust','Unterrand der oberen Rippe','Oberrand der unteren Rippe','Rippen heben (Einatmung)',178,198,'a'],
+ ['Mm. intercostales interni','Innere Zwischenrippenmuskeln','Brust','Oberrand der unteren Rippe','Unterrand der oberen Rippe','Rippen senken (Ausatmung)',184,208,'a'],
+ ['Diaphragma','Zwerchfell','Brust','Lendenwirbel, untere Rippen, Processus xiphoideus','Centrum tendineum','Wichtigster Atemmuskel (Einatmung)',165,236,'a'],
+ ['M. rectus abdominis','Gerader Bauchmuskel','Bauch','5.–7. Rippenknorpel, Processus xiphoideus','Os pubis','Rumpf beugen, Bauchpresse',158,268,'a'],
+ ['M. obliquus externus abdominis','Äußerer schräger Bauchmuskel','Bauch','5.–12. Rippe','Crista iliaca, Rektusscheide, Leistenband','Rumpf zur Gegenseite drehen, beugen',190,268,'a'],
+ ['M. obliquus internus abdominis','Innerer schräger Bauchmuskel','Bauch','Crista iliaca, Fascia thoracolumbalis, Leistenband','Untere Rippen, Rektusscheide','Rumpf zur gleichen Seite drehen, beugen',182,290,'a'],
+ ['M. transversus abdominis','Querer Bauchmuskel','Bauch','Innenseite der Rippen 7–12, Crista iliaca','Rektusscheide, Linea alba','Bauchpresse, Taille einziehen',172,282,'a'],
+ ['M. deltoideus','Deltamuskel','Schulter','Clavicula, Acromion, Spina scapulae','Tuberositas deltoidea (Humerus)','Arm abspreizen (Abduktion), vorne/hinten heben',219,150,'a'],
+ ['M. supraspinatus','Obergrätenmuskel','Schulter','Fossa supraspinata','Tuberculum majus humeri','Arm abspreizen (Start der Abduktion); Teil der Rotatorenmanschette',190,138,'p'],
+ ['M. infraspinatus','Untergrätenmuskel','Schulter','Fossa infraspinata','Tuberculum majus humeri','Arm nach außen drehen; Rotatorenmanschette',191,168,'p'],
+ ['M. teres minor','Kleiner Rundmuskel','Schulter','Außenrand der Scapula','Tuberculum majus humeri','Arm nach außen drehen; Rotatorenmanschette',202,180,'p'],
+ ['M. subscapularis','Unterschulterblattmuskel','Schulter','Fossa subscapularis (Vorderseite der Scapula)','Tuberculum minus humeri','Arm nach innen drehen; Rotatorenmanschette',196,174,'a'],
+ ['M. teres major','Großer Rundmuskel','Schulter','Unterer Schulterblattwinkel','Crista tuberculi minoris humeri','Arm heranziehen, nach innen drehen',195,198,'p'],
+ ['M. biceps brachii','Zweiköpfiger Oberarmmuskel','Oberarm','Caput longum: Tuberculum supraglenoidale; Caput breve: Processus coracoideus','Tuberositas radii','Ellenbogen beugen, Unterarm nach außen drehen (Supination)',221,200,'a'],
+ ['M. brachialis','Armbeuger','Oberarm','Vorderseite des Humerus','Tuberositas ulnae','Ellenbogen beugen (stärkster Beuger)',223,232,'a'],
+ ['M. coracobrachialis','Rabenschnabel-Oberarmmuskel','Oberarm','Processus coracoideus','Innenseite Humerus','Arm heranziehen, nach vorne heben',211,176,'a'],
+ ['M. triceps brachii','Dreiköpfiger Oberarmmuskel','Oberarm','Caput longum: Tuberculum infraglenoidale; Caput laterale und mediale: Humerus','Olecranon','Ellenbogen strecken',219,208,'p'],
+ ['M. brachioradialis','Oberarm-Speichen-Muskel','Unterarm','Außenkante des Humerus','Processus styloideus radii','Ellenbogen beugen (in Mittelstellung)',237,274,'a'],
+ ['M. pronator teres','Runder Einwärtsdreher','Unterarm','Epicondylus medialis, Ulna','Mitte des Radius','Unterarm nach innen drehen (Pronation)',222,274,'a'],
+ ['M. supinator','Auswärtsdreher','Unterarm','Epicondylus lateralis, Ulna','Oberer Radius','Unterarm nach außen drehen (Supination)',231,272,'p'],
+ ['M. flexor carpi radialis','Speichenseitiger Handbeuger','Unterarm','Epicondylus medialis','Basis Os metacarpi II','Hand beugen, zur Daumenseite neigen',230,302,'a'],
+ ['M. flexor carpi ulnaris','Ellenseitiger Handbeuger','Unterarm','Epicondylus medialis, Olecranon','Os pisiforme, Os metacarpi V','Hand beugen, zur Kleinfingerseite neigen',220,315,'a'],
+ ['M. flexor digitorum superficialis','Oberflächlicher Fingerbeuger','Unterarm','Epicondylus medialis, Ulna, Radius','Mittelglieder Finger 2–5','Fingermittelgelenke beugen',226,320,'a'],
+ ['M. flexor digitorum profundus','Tiefer Fingerbeuger','Unterarm','Ulna, Membrana interossea','Endglieder Finger 2–5','Fingerendgelenke beugen',224,334,'a'],
+ ['M. extensor digitorum','Fingerstrecker','Unterarm','Epicondylus lateralis','Dorsalaponeurose Finger 2–5','Finger und Hand strecken',230,305,'p'],
+ ['Mm. extensores carpi radiales (longus/brevis)','Speichenseitige Handstrecker','Unterarm','Epicondylus lateralis, Humerus','Basis Os metacarpi II/III','Hand strecken, zur Daumenseite neigen',239,292,'p'],
+ ['M. extensor carpi ulnaris','Ellenseitiger Handstrecker','Unterarm','Epicondylus lateralis, Ulna','Basis Os metacarpi V','Hand strecken, zur Kleinfingerseite neigen',223,318,'p'],
+ ['M. opponens pollicis','Daumengegensteller','Hand','Os trapezium, Retinaculum flexorum','Os metacarpi I','Daumen den Fingern gegenüberstellen (Opposition)',245,368,'a'],
+ ['M. abductor pollicis brevis','Kurzer Daumenabspreizer','Hand','Os scaphoideum, Retinaculum flexorum','Grundglied des Daumens','Daumen abspreizen',250,370,'a'],
+ ['M. adductor pollicis','Daumenanzieher','Hand','Os capitatum, Ossa metacarpi II/III','Grundglied des Daumens','Daumen heranziehen',242,374,'a'],
+ ['Mm. lumbricales','Spulmuskeln','Hand','Sehnen des M. flexor digitorum profundus','Dorsalaponeurose','Grundgelenke beugen, Mittel- und Endgelenke strecken',234,380,'a'],
+ ['Mm. interossei','Zwischenknochenmuskeln','Hand','Zwischen den Mittelhandknochen','Grundglieder, Dorsalaponeurose','Finger spreizen (dorsale) und schließen (palmare)',236,376,'p'],
+ ['M. iliopsoas','Lenden-Darmbein-Muskel','Hüfte','M. psoas major: Lendenwirbel; M. iliacus: Fossa iliaca','Trochanter minor (Femur)','Hüfte beugen (stärkster Hüftbeuger)',171,318,'a'],
+ ['M. gluteus maximus','Großer Gesäßmuskel','Hüfte','Os ilium, Os sacrum','Tuberositas glutea, Tractus iliotibialis','Hüfte strecken, nach außen drehen',180,350,'p'],
+ ['M. gluteus medius','Mittlerer Gesäßmuskel','Hüfte','Außenfläche Os ilium','Trochanter major','Hüfte abspreizen; hält das Becken beim Gehen waagerecht',194,318,'p'],
+ ['M. gluteus minimus','Kleiner Gesäßmuskel','Hüfte','Außenfläche Os ilium (unter dem medius)','Trochanter major','Hüfte abspreizen, nach innen drehen',200,330,'p'],
+ ['M. piriformis','Birnenförmiger Muskel','Hüfte','Vorderfläche Os sacrum','Trochanter major','Hüfte nach außen drehen',172,334,'p'],
+ ['M. tensor fasciae latae','Schenkelbindenspanner','Hüfte','Spina iliaca anterior superior','Tractus iliotibialis','Hüfte beugen, abspreizen; spannt den Tractus',205,345,'a'],
+ ['M. sartorius','Schneidermuskel','Oberschenkel','Spina iliaca anterior superior','Pes anserinus (Tibia)','Hüfte und Knie beugen („Schneidersitz“); längster Muskel',180,402,'a'],
+ ['M. quadriceps femoris','Vierköpfiger Oberschenkelmuskel','Oberschenkel','Rectus femoris: Spina iliaca anterior inferior; Vasti: Femur','Patella → Tuberositas tibiae (über Lig. patellae)','Knie strecken (einziger Kniestrecker)',190,432,'a'],
+ ['M. rectus femoris','Gerader Schenkelmuskel','Oberschenkel','Spina iliaca anterior inferior','Patella / Tuberositas tibiae','Knie strecken, Hüfte beugen (zweigelenkig)',189,410,'a'],
+ ['M. vastus lateralis','Äußerer Schenkelmuskel','Oberschenkel','Außenseite Femur','Patella / Tuberositas tibiae','Knie strecken',201,445,'a'],
+ ['M. vastus medialis','Innerer Schenkelmuskel','Oberschenkel','Innenseite Femur','Patella / Tuberositas tibiae','Knie strecken; stabilisiert die Patella',173,470,'a'],
+ ['M. vastus intermedius','Mittlerer Schenkelmuskel','Oberschenkel','Vorderseite Femur (unter dem Rectus)','Patella / Tuberositas tibiae','Knie strecken',188,455,'a'],
+ ['M. adductor longus','Langer Schenkelanzieher','Oberschenkel','Os pubis','Linea aspera (Femur)','Bein heranziehen (Adduktion)',168,385,'a'],
+ ['M. adductor magnus','Großer Schenkelanzieher','Oberschenkel','Os pubis, Os ischii','Linea aspera, Epicondylus medialis femoris','Bein heranziehen; stärkster Adduktor',168,420,'p'],
+ ['M. gracilis','Schlanker Muskel','Oberschenkel','Os pubis','Pes anserinus (Tibia)','Bein heranziehen, Knie beugen',163,440,'a'],
+ ['M. pectineus','Kammmuskel','Oberschenkel','Os pubis','Unterhalb Trochanter minor','Bein heranziehen, Hüfte beugen',168,362,'a'],
+ ['M. biceps femoris','Zweiköpfiger Schenkelmuskel','Oberschenkel','Caput longum: Tuber ischiadicum; Caput breve: Femur','Caput fibulae','Knie beugen, Hüfte strecken (ischiocrurale Muskulatur)',198,440,'p'],
+ ['M. semitendinosus','Halbsehnenmuskel','Oberschenkel','Tuber ischiadicum','Pes anserinus (Tibia)','Knie beugen, Hüfte strecken',172,438,'p'],
+ ['M. semimembranosus','Plattsehnenmuskel','Oberschenkel','Tuber ischiadicum','Condylus medialis tibiae','Knie beugen, Hüfte strecken',175,465,'p'],
+ ['M. popliteus','Kniekehlenmuskel','Unterschenkel','Condylus lateralis femoris','Hinterseite Tibia','Knie „entriegeln“ (Innenrotation zu Beginn der Beugung)',184,512,'p'],
+ ['M. triceps surae','Dreiköpfiger Wadenmuskel','Unterschenkel','Gastrocnemius + Soleus','Tuber calcanei (über die Achillessehne)','Fuß nach unten strecken (Plantarflexion), Zehenstand',183,555,'p'],
+ ['M. gastrocnemius','Zwillingswadenmuskel','Unterschenkel','Condylus medialis und lateralis femoris','Tuber calcanei (Achillessehne)','Plantarflexion, Knie beugen (zweigelenkig)',181,532,'p'],
+ ['M. soleus','Schollenmuskel','Unterschenkel','Fibula, Tibia','Tuber calcanei (Achillessehne)','Plantarflexion (eingelenkig)',187,570,'p'],
+ ['M. tibialis anterior','Vorderer Schienbeinmuskel','Unterschenkel','Außenseite Tibia','Os cuneiforme mediale, Os metatarsi I','Fuß heben (Dorsalextension), Supination',187,550,'a'],
+ ['M. extensor digitorum longus','Langer Zehenstrecker','Unterschenkel','Tibia, Fibula','Zehen 2–5','Zehen und Fuß heben',194,572,'a'],
+ ['M. extensor hallucis longus','Langer Großzehenstrecker','Unterschenkel','Fibula','Endglied der Großzehe','Großzehe und Fuß heben',184,588,'a'],
+ ['M. fibularis longus (peroneus longus)','Langer Wadenbeinmuskel','Unterschenkel','Caput fibulae, Fibula','Os cuneiforme mediale, Os metatarsi I (unter dem Fuß)','Fuß nach außen kippen (Pronation), Plantarflexion',201,540,'a'],
+ ['M. fibularis brevis (peroneus brevis)','Kurzer Wadenbeinmuskel','Unterschenkel','Untere Fibula','Os metatarsi V','Pronation, Plantarflexion',200,582,'a'],
+ ['M. tibialis posterior','Hinterer Schienbeinmuskel','Unterschenkel','Tibia, Fibula, Membrana interossea','Os naviculare, Keilbeine','Supination, Plantarflexion; stützt das Längsgewölbe',181,586,'p'],
+ ['M. flexor hallucis longus','Langer Großzehenbeuger','Unterschenkel','Fibula','Endglied der Großzehe','Großzehe beugen, Abdruck beim Gehen',190,596,'p'],
+],r=>({lat:r[0],de:r[1],region:r[2],o:r[3],i:r[4],f:r[5],x:r[6],y:r[7],view:r[8]}));
+
+// Sehnen & Bänder: [Latein, Deutsch, Region, Info, x, y, Ansicht]
+add('ligaments',[
+ ['Galea aponeurotica','Sehnenhaube (Kopfschwarte)','Kopf','Sehnenplatte über dem Schädeldach zwischen Stirn- und Hinterhauptsmuskel.',150,22,'a'],
+ ['Ligamentum nuchae','Nackenband','Wirbelsäule','Kräftiges Band zwischen Hinterhaupt und Dornfortsatz C7; hält den Kopf.',150,113,'p'],
+ ['Ligamentum longitudinale anterius','Vorderes Längsband','Wirbelsäule','Verläuft auf der Vorderseite der Wirbelkörper vom Hinterhaupt bis zum Kreuzbein.',150,288,'a'],
+ ['Ligamentum longitudinale posterius','Hinteres Längsband','Wirbelsäule','Liegt im Wirbelkanal auf der Rückseite der Wirbelkörper; seitlich schwächer – deshalb treten Bandscheibenvorfälle meist seitlich aus.',150,270,'p'],
+ ['Ligamenta flava','Gelbe Bänder','Wirbelsäule','Elastische Bänder zwischen den Wirbelbögen.',150,228,'p'],
+ ['Fascia thoracolumbalis','Rückenfaszie','Rücken','Sehnenplatte im Lendenbereich; Ursprung von Latissimus und Bauchmuskeln.',158,302,'p'],
+ ['Linea alba','Weiße Linie','Bauch','Sehnige Mittellinie des Bauches zwischen den beiden Mm. recti abdominis.',150,280,'a'],
+ ['Ligamentum inguinale','Leistenband','Bauch','Spannt sich von der Spina iliaca anterior superior zum Tuberculum pubicum.',178,332,'a'],
+ ['Ligamentum coracoacromiale','Schulterdach-Band','Schulter','Bildet mit dem Acromion das Schulterdach (Fornix humeri).',203,134,'a'],
+ ['Tendo m. supraspinati','Supraspinatussehne','Schulter','Verläuft unter dem Schulterdach; typischer Ort des Impingement und des Rotatorenmanschettenrisses.',206,138,'p'],
+ ['Tendo capitis longi m. bicipitis','Lange Bizepssehne','Schulter','Läuft im Sulcus intertubercularis durch das Schultergelenk zum Tuberculum supraglenoidale.',213,152,'a'],
+ ['Ligamentum collaterale ulnare (cubiti)','Inneres Seitenband des Ellenbogens','Ellenbogen','Sichert das Ellenbogengelenk innen (häufig verletzt bei Werfern).',216,256,'a'],
+ ['Ligamentum collaterale radiale (cubiti)','Äußeres Seitenband des Ellenbogens','Ellenbogen','Sichert das Ellenbogengelenk außen.',232,256,'a'],
+ ['Ligamentum anulare radii','Ringband der Speiche','Ellenbogen','Hält den Radiuskopf an der Ulna; bei Kleinkindern „Chassaignac“ (Radiusköpfchen-Subluxation).',228,265,'a'],
+ ['Retinaculum musculorum flexorum','Beugesehnen-Halteband','Hand','Bildet das Dach des Karpaltunnels (Canalis carpi), durch den der N. medianus läuft.',236,354,'a'],
+ ['Tendines mm. flexorum digitorum','Beugesehnen der Finger','Hand','Laufen in Sehnenscheiden durch den Karpaltunnel zu den Fingern.',237,383,'a'],
+ ['Aponeurosis dorsalis (Dorsalaponeurose)','Streckapparat der Finger','Hand','Sehnenhaube auf dem Fingerrücken, in die Strecksehnen und kleine Handmuskeln einstrahlen.',240,393,'p'],
+ ['Ligamentum iliofemorale','Darmbein-Oberschenkel-Band','Hüfte','Stärkstes Band des Körpers; verhindert die Überstreckung der Hüfte.',190,340,'a'],
+ ['Ligamentum capitis femoris','Hüftkopfband','Hüfte','Liegt im Hüftgelenk; führt ein kleines Gefäß zum Femurkopf.',183,342,'a'],
+ ['Tractus iliotibialis','Iliotibialband (Schenkelbinde)','Oberschenkel','Verstärkungsstreifen der Fascia lata an der Außenseite des Oberschenkels bis zur Tibia.',204,440,'a'],
+ ['Tendo m. quadricipitis femoris','Quadrizepssehne','Knie','Endsehne des Quadrizeps; umschließt die Patella.',183,480,'a'],
+ ['Ligamentum patellae','Kniescheibenband (Patellarsehne)','Knie','Von der Patella zur Tuberositas tibiae; Fortsetzung der Quadrizepssehne. Hier wird der Patellarsehnenreflex ausgelöst.',182,507,'a'],
+ ['Ligamentum cruciatum anterius','Vorderes Kreuzband','Knie','Verhindert das Vorschieben der Tibia gegenüber dem Femur („vordere Schublade“); häufig gerissen.',180,499,'a'],
+ ['Ligamentum cruciatum posterius','Hinteres Kreuzband','Knie','Verhindert das Zurückschieben der Tibia („hintere Schublade“).',186,501,'p'],
+ ['Ligamentum collaterale tibiale','Innenband des Knies','Knie','Breites Band innen; mit dem Innenmeniskus verwachsen.',170,500,'a'],
+ ['Ligamentum collaterale fibulare','Außenband des Knies','Knie','Rundliches Band außen zum Fibulakopf.',196,500,'a'],
+ ['Pes anserinus','Gänsefuß','Knie','Gemeinsamer Sehnenansatz von Sartorius, Gracilis und Semitendinosus an der Tibia-Innenseite.',172,516,'a','Merkhilfe „Say Grace before Tea“: Sartorius, Gracilis, semiTendinosus.'],
+ ['Tendo calcaneus (Achillis)','Achillessehne','Fuß','Gemeinsame Sehne des M. triceps surae zum Tuber calcanei; stärkste Sehne des Körpers.',184,603,'p'],
+ ['Ligamentum talofibulare anterius','Vorderes Außenband des Sprunggelenks','Fuß','Am häufigsten verletztes Band beim Umknicken nach außen (Supinationstrauma).',198,616,'a'],
+ ['Ligamentum deltoideum','Innenband des Sprunggelenks','Fuß','Dreieckiges, sehr starkes Band am Innenknöchel.',170,615,'a'],
+ ['Aponeurosis plantaris','Plantarfaszie','Fuß','Straffe Sehnenplatte der Fußsohle; spannt das Längsgewölbe (Fersensporn, Plantarfasziitis).',186,642,'p'],
+ ['Retinaculum musculorum extensorum (pedis)','Strecksehnen-Halteband des Fußes','Fuß','Hält die Strecksehnen am Sprunggelenk an Ort und Stelle.',185,604,'a'],
+],r=>({lat:r[0],de:r[1],region:r[2],info:r[3],x:r[4],y:r[5],view:r[6],mn:r[7]}));
+
+// Fachbegriffe: [Latein, Deutsch, Region, Info]
+add('terms',[
+ ['anterior','vorne','Lage & Richtung','Synonym: ventralis (bauchwärts).'],
+ ['posterior','hinten','Lage & Richtung','Synonym: dorsalis (rückenwärts).'],
+ ['ventralis','bauchwärts','Lage & Richtung','Von lat. venter = Bauch.'],
+ ['dorsalis','rückenwärts','Lage & Richtung','Von lat. dorsum = Rücken. Beim Fuß: Fußrücken.'],
+ ['superior','oben','Lage & Richtung','Gegenteil: inferior.'],
+ ['inferior','unten','Lage & Richtung','Gegenteil: superior.'],
+ ['cranialis','kopfwärts','Lage & Richtung','Von lat. cranium = Schädel.'],
+ ['caudalis','steißwärts','Lage & Richtung','Von lat. cauda = Schwanz.'],
+ ['medialis','zur Mitte hin','Lage & Richtung','Zur Medianebene hin.'],
+ ['lateralis','seitlich, zur Seite hin','Lage & Richtung','Von der Medianebene weg.'],
+ ['medianus','in der Mitte','Lage & Richtung','Genau in der Medianebene (z. B. Linea alba).'],
+ ['proximalis','rumpfnah','Lage & Richtung','An Gliedmaßen: zum Rumpf hin.'],
+ ['distalis','rumpffern','Lage & Richtung','An Gliedmaßen: vom Rumpf weg.'],
+ ['superficialis','oberflächlich','Lage & Richtung','Gegenteil: profundus.'],
+ ['profundus','tief','Lage & Richtung','Gegenteil: superficialis.'],
+ ['dexter','rechts','Lage & Richtung','Immer aus Sicht des Patienten.'],
+ ['sinister','links','Lage & Richtung','Immer aus Sicht des Patienten.'],
+ ['palmaris','hohlhandseitig','Lage & Richtung','Von lat. palma = Handfläche.'],
+ ['plantaris','fußsohlenseitig','Lage & Richtung','Von lat. planta = Fußsohle.'],
+ ['radialis','speichenseitig (daumenseitig)','Lage & Richtung','Am Unterarm und an der Hand.'],
+ ['ulnaris','ellenseitig (kleinfingerseitig)','Lage & Richtung','Am Unterarm und an der Hand.'],
+ ['tibialis','schienbeinseitig','Lage & Richtung','Am Unterschenkel innen.'],
+ ['fibularis','wadenbeinseitig','Lage & Richtung','Am Unterschenkel außen; älter: peroneus.'],
+ ['Flexio','Beugung','Bewegung','Verkleinerung des Gelenkwinkels.'],
+ ['Extensio','Streckung','Bewegung','Vergrößerung des Gelenkwinkels.'],
+ ['Abductio','Abspreizen','Bewegung','Von der Körpermitte weg.'],
+ ['Adductio','Heranführen','Bewegung','Zur Körpermitte hin.'],
+ ['Anteversio','Vorheben','Bewegung','Arm oder Bein nach vorne führen.'],
+ ['Retroversio','Rückheben','Bewegung','Arm oder Bein nach hinten führen.'],
+ ['Rotatio interna','Innenrotation (Innendrehung)','Bewegung','Drehung um die Längsachse nach innen.'],
+ ['Rotatio externa','Außenrotation (Außendrehung)','Bewegung','Drehung um die Längsachse nach außen.'],
+ ['Pronatio','Einwärtsdrehung','Bewegung','Hand: Handfläche nach unten („Brot holen“). Fuß: Außenrand heben.'],
+ ['Supinatio','Auswärtsdrehung','Bewegung','Hand: Handfläche nach oben („Suppe tragen“). Fuß: Innenrand heben.'],
+ ['Elevatio','Heben','Bewegung','z. B. der Schulter.'],
+ ['Depressio','Senken','Bewegung','z. B. der Schulter.'],
+ ['Dorsalextensio','Fußheben','Bewegung','Fußrücken zum Schienbein.'],
+ ['Plantarflexio','Fußsenken','Bewegung','Zehenspitzenstand.'],
+ ['Oppositio','Gegenüberstellen','Bewegung','Daumen zu den Fingern.'],
+ ['Planum sagittale','Sagittalebene','Ebenen & Achsen','Teilt den Körper in rechts und links (Pfeilrichtung von vorn nach hinten).'],
+ ['Planum frontale (coronale)','Frontalebene','Ebenen & Achsen','Teilt den Körper in vorne und hinten, parallel zur Stirn.'],
+ ['Planum transversale','Transversalebene','Ebenen & Achsen','Teilt den Körper in oben und unten (Querschnitt).'],
+ ['Os longum','Röhrenknochen (langer Knochen)','Knochenbau','z. B. Femur, Humerus.'],
+ ['Os breve','Kurzer Knochen','Knochenbau','z. B. Handwurzelknochen.'],
+ ['Os planum','Platter Knochen','Knochenbau','z. B. Sternum, Scapula, Schädeldach.'],
+ ['Os sesamoideum','Sesambein','Knochenbau','In Sehnen eingelagert, z. B. Patella.'],
+ ['Diaphysis','Knochenschaft','Knochenbau','Mittelteil eines Röhrenknochens mit Markhöhle.'],
+ ['Epiphysis','Knochenende','Knochenbau','Gelenknahe Enden des Röhrenknochens.'],
+ ['Epiphysenfuge (Cartilago epiphysialis)','Wachstumsfuge','Knochenbau','Knorpelzone, in der der Knochen in die Länge wächst.'],
+ ['Periosteum','Knochenhaut','Knochenbau','Sehr schmerzempfindliche Haut um den Knochen; ernährt ihn.'],
+ ['Substantia compacta','Kompakter Knochen','Knochenbau','Dichte äußere Knochenschicht.'],
+ ['Substantia spongiosa','Schwammknochen','Knochenbau','Bälkchenstruktur im Inneren, folgt den Belastungslinien.'],
+ ['Medulla ossium rubra','Rotes Knochenmark','Knochenbau','Ort der Blutbildung.'],
+ ['Origo','Ursprung','Muskulatur','Meist der rumpfnähere, weniger bewegliche Befestigungspunkt.'],
+ ['Insertio','Ansatz','Muskulatur','Meist der rumpfferne, bewegliche Befestigungspunkt.'],
+ ['Venter','Muskelbauch','Muskulatur','Der fleischige Mittelteil des Muskels.'],
+ ['Tendo','Sehne','Muskulatur','Verbindet Muskel und Knochen.'],
+ ['Ligamentum','Band','Muskulatur','Verbindet Knochen mit Knochen.'],
+ ['Fascia','Muskelhülle (Faszie)','Muskulatur','Bindegewebige Hülle um Muskeln und Muskelgruppen.'],
+ ['Agonist / Antagonist','Spieler / Gegenspieler','Muskulatur','z. B. Biceps (Beuger) und Triceps (Strecker).'],
+],r=>({lat:r[0],de:r[1],region:r[2],info:r[3]}));
+
+/* ================= SPEICHER ================= */
+const STORE_KEY='corpus-humanum-v1';
+let prog={};
+try{ prog=JSON.parse(localStorage.getItem(STORE_KEY)||'{}')||{}; }catch(e){ prog={}; }
+function save(){ try{ localStorage.setItem(STORE_KEY,JSON.stringify(prog)); }catch(e){} }
+function P(id){ return prog[id]||(prog[id]={b:0,r:0,w:0}); }
+function mark(id,ok){ const p=P(id); if(ok){p.r++;p.b=Math.min(5,p.b+1);}else{p.w++;p.b=0;} save(); }
+const mastered=id=>(prog[id]?.b||0)>=3;
+
+/* ================= HILFEN ================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
+const byId=Object.fromEntries(ITEMS.map(i=>[i.id,i]));
+const cvar=cat=>`var(${CATS[cat].color})`;
+const regionsOf=cats=>[...new Set(ITEMS.filter(i=>cats.includes(i.cat)).map(i=>i.region))];
+function detailHTML(it){
+  let rows='';
+  const row=(k,v)=>v?`<dt>${k}</dt><dd>${esc(v)}</dd>`:'';
+  rows+=row('Region',it.region);
+  if(it.cat==='muscles'){rows+=row('Ursprung',it.o)+row('Ansatz',it.i)+row('Funktion',it.f);}
+  if(it.cat==='joints'){rows+=row(it.region==='Gelenktypen'?'Freiheit':it.region==='Gelenkaufbau'?'Art':'Gelenktyp',it.type)+row('Knochen',it.parts);}
+  rows+=row('Info',it.info);
+  return `<span class="catbadge" style="--cc:${cvar(it.cat)}">${CATS[it.cat].name}</span>
+    <h2>${esc(it.lat)}</h2><div class="de">${esc(it.de)}</div><dl>${rows}</dl>
+    ${it.mn?`<div class="mn" style="--cc:${cvar(it.cat)}"><b>Merkhilfe:</b> ${esc(it.mn)}</div>`:''}`;
+}
+
+/* ================= 3D ================= */
+import { Viewer } from './js/viewer.js?v=5';
+const viewer=new Viewer({base:'models/',catColor:c=>CATS[c].color});
+viewer.setAllItems(ITEMS);
+const hasFig=i=>viewer.hasFig(i);
+viewer.onReady=()=>{ viewer.setAllItems(ITEMS); if(!$('#tab-atlas').hidden){ atlasRender(); if(atlasSel) viewer.select(atlasSel); } };
+
+/* ================= TABS ================= */
+const tabs=document.querySelectorAll('nav.tabs button');
+function showTab(t){ tabs.forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t)); ['atlas','learn','quiz','stats'].forEach(x=>$('#tab-'+x).hidden=x!==t); if(t==='stats') renderStats(); if(t==='learn') learnBuild(); if(t==='atlas') atlasMode(); if(t==='quiz'&&Q&&!$('#quiz-run').hidden&&Q.idx<Q.items.length){ viewer.mount($('#quiz-plate')); quizNext(); } try{localStorage.setItem(STORE_KEY+'-tab',t);}catch(e){} }
+tabs.forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+
+function catChips(host,selected,{multi=true,only=null,onChange}){
+  const keys=only||Object.keys(CATS);
+  const draw=()=>{ host.innerHTML=keys.map(k=>`<button class="chip" style="--cc:${cvar(k)}" data-k="${k}" aria-pressed="${selected.includes(k)}"><span class="dot"></span>${CATS[k].name}</button>`).join('');
+    host.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ const k=b.dataset.k;
+      if(multi){ const i=selected.indexOf(k); if(i>=0){ if(selected.length>1) selected.splice(i,1);} else selected.push(k); }
+      else { selected.splice(0,selected.length,k); }
+      draw(); onChange&&onChange(); }); };
+  draw();
+}
+function fillRegions(sel,cats,keep){ const rs=regionsOf(cats); sel.innerHTML=`<option value="">Alle Regionen</option>`+rs.map(r=>`<option${r===keep?' selected':''}>${esc(r)}</option>`).join(''); }
+
+/* ================= ATLAS ================= */
+const atlasCats=['bones'];
+let atlasSel=null;
+const ATLAS_INTRO=`<span class="label">So geht's</span><h2>Wähle eine Struktur</h2><div class="de">Fahre mit der Maus über das Modell, um Namen zu sehen, und klicke eine Struktur an. Oder wähle unten aus der Liste. Oben wechselst du zwischen Knochen, Gelenken, Muskeln, Sehnen &amp; Bändern und Fachbegriffen.</div>`;
+function atlasMode(){
+  viewer.mount($('#atlas-plate')); viewer.quiz=false; viewer.hideLabel=false; viewer.hideMarkers=false; viewer.target=null; viewer.expect=null;
+  viewer.onPick=(it,part)=>{ if(it) atlasPick(it.id,false); else if(part) atlasPart(part); };
+  atlasRender(); viewer.select(atlasSel);
+}
+function atlasRender(){
+  const q=$('#atlas-search').value.trim().toLowerCase();
+  const pool=ITEMS.filter(i=>atlasCats.includes(i.cat)&&(!q||(i.lat+' '+i.de+' '+(i.f||'')+' '+i.region).toLowerCase().includes(q)));
+  viewer.setItems(pool);
+  const groups={}; pool.forEach(i=>(groups[i.region]??=[]).push(i));
+  $('#atlas-list').innerHTML=Object.entries(groups).map(([r,arr])=>`<h4>${esc(r)}</h4>`+arr.map(i=>`<button data-id="${i.id}" class="${i.id===atlasSel?'on':''}"><span class="lat">${esc(i.lat)}</span><small>${esc(i.de)}</small></button>`).join('')).join('')||'<p class="muted">Nichts gefunden.</p>';
+  $('#atlas-list').querySelectorAll('button').forEach(b=>b.onclick=()=>atlasPick(b.dataset.id,true));
+  if(!atlasSel||!pool.some(i=>i.id===atlasSel)){ atlasSel=null; $('#atlas-detail').innerHTML=ATLAS_INTRO; viewer.select(null); }
+}
+function atlasPick(id,fromList){
+  atlasSel=id; const it=byId[id];
+  if(it.cat==='muscles'&&!atlasCats.includes('muscles')){ atlasCats.push('muscles'); drawAtlasCats(); atlasRender(); }
+  $('#atlas-detail').innerHTML=detailHTML(it)+(hasFig(it)?`<div class="card-actions" style="justify-content:flex-start;margin-top:14px"><button class="btn ghost" id="iso-go">Einzeln ansehen und drehen</button></div>`:'<p class="muted" style="margin-top:10px;font-size:.9rem">Dieser Begriff hat keine feste Stelle am Modell.</p>');
+  $('#iso-go')&&($('#iso-go').onclick=()=>viewer.isolate(true));
+  viewer.select(id,{zoom:fromList});
+  $('#atlas-list').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.id===id));
+  if(!fromList){ const b=$('#atlas-list').querySelector(`[data-id="${id}"]`); b&&b.scrollIntoView({block:'nearest'}); }
+}
+function atlasPart(part){
+  const nm=viewer.partName(part.i); atlasSel=null; viewer.select(null);
+  $('#atlas-detail').innerHTML=`<span class="label">Struktur im Modell</span><h2>${esc(nm.lat)}</h2><div class="de">${esc(nm.de||part.name)}</div><p class="muted" style="font-size:.9rem">Englische Fachbezeichnung: ${esc(part.name)}</p>`;
+}
+function drawAtlasCats(){ catChips($('#atlas-cats'),atlasCats,{onChange:()=>{ atlasSel=null; viewer.setLayer('muscle',atlasCats.includes('muscles')); atlasRender(); }}); }
+drawAtlasCats();
+$('#atlas-search').oninput=atlasRender;
+atlasMode();
+
+/* ================= LERNEN (Karteikarten) ================= */
+const learnCats=['bones'];
+let deck=[],cardIdx=0,flipped=false,sessionOk=0,sessionNo=0;
+catChips($('#learn-cats'),learnCats,{onChange:()=>{fillRegions($('#learn-region'),learnCats,'');learnBuild();}});
+fillRegions($('#learn-region'),learnCats,'');
+['#learn-region','#learn-dir','#learn-onlynew'].forEach(s=>$(s).onchange=learnBuild);
+function learnPool(){ const r=$('#learn-region').value; return ITEMS.filter(i=>learnCats.includes(i.cat)&&(!r||i.region===r)); }
+function learnBuild(){
+  let pool=learnPool(); if($('#learn-onlynew').checked) pool=pool.filter(i=>!mastered(i.id));
+  // niedrigste Lernstufe zuerst, innerhalb gemischt
+  deck=shuffle(pool).sort((a,b)=>(prog[a.id]?.b||0)-(prog[b.id]?.b||0)).map(i=>i.id);
+  cardIdx=0; flipped=false; sessionOk=0; sessionNo=0; learnRender();
+}
+function learnRender(){
+  const area=$('#learn-area'); const pool=learnPool();
+  const counts=[0,0,0,0,0,0]; pool.forEach(i=>counts[prog[i.id]?.b||0]++);
+  const boxes=`<div class="boxes">${counts.map((c,i)=>`<span title="Lernstufe ${i}">Stufe ${i}: ${c}</span>`).join('')}</div>`;
+  if(!deck.length||cardIdx>=deck.length){
+    area.innerHTML=`<div class="panel" style="max-width:620px;margin:0 auto;text-align:center"><div class="label">Runde fertig</div><div class="score">${sessionOk} / ${sessionOk+sessionNo}</div><p class="muted">${deck.length?'gewusst in dieser Runde':'Keine Karten – alles gekonnt oder Filter zu eng.'}</p><div class="card-actions"><button class="btn" id="learn-again">Neue Runde</button></div>${boxes}</div>`;
+    $('#learn-again').onclick=learnBuild; return;
+  }
+  const it=byId[deck[cardIdx]]; const latFront=$('#learn-dir').value==='lat';
+  const front=latFront?`<div class="big lat">${esc(it.lat)}</div>`:`<div class="big">${esc(it.de)}</div>`;
+  const back=(latFront?`<div class="big" style="font-size:1.6rem">${esc(it.de)}</div><div class="lat muted">${esc(it.lat)}</div>`:`<div class="big lat" style="font-size:1.6rem">${esc(it.lat)}</div><div class="muted">${esc(it.de)}</div>`)+
+    `<div class="detail" style="margin-top:8px"><dl>${it.cat==='muscles'?`<dt>Ursprung</dt><dd>${esc(it.o)}</dd><dt>Ansatz</dt><dd>${esc(it.i)}</dd><dt>Funktion</dt><dd>${esc(it.f)}</dd>`:''}${it.type?`<dt>Typ</dt><dd>${esc(it.type)}</dd>`:''}${it.parts?`<dt>Knochen</dt><dd>${esc(it.parts)}</dd>`:''}${it.info?`<dt>Info</dt><dd>${esc(it.info)}</dd>`:''}</dl>${it.mn?`<div class="mn" style="--cc:${cvar(it.cat)}">${esc(it.mn)}</div>`:''}</div>`;
+  area.innerHTML=`<div class="card-stage">
+    <div class="q-head"><span class="catbadge" style="--cc:${cvar(it.cat)}">${CATS[it.cat].name} · ${esc(it.region)}</span><span class="num muted">Karte ${cardIdx+1} / ${deck.length} · Stufe ${prog[it.id]?.b||0}</span></div>
+    <div class="progress"><i style="width:${cardIdx/deck.length*100}%"></i></div>
+    <div class="card ${flipped?'flip':''}" id="card" tabindex="0" aria-label="Karte umdrehen"><div class="face"><span class="label">${latFront?'Was heißt das auf Deutsch?':'Wie heißt das auf Latein?'}</span>${front}<span class="muted" style="margin-top:auto;font-size:.85rem">Antippen zum Umdrehen</span></div><div class="face back">${back}</div></div>
+    <div class="card-actions">${flipped?`<button class="btn bad" id="no">Nicht gewusst</button><button class="btn good" id="ok">Gewusst</button>`:`<button class="btn" id="flip">Umdrehen</button>`}${hasFig(it)?`<button class="btn ghost" id="show">Im 3D-Modell zeigen</button>`:''}</div>
+    <p class="kbd">Tastatur: Leertaste = umdrehen · 1 = nicht gewusst · 2 = gewusst</p>${boxes}</div>`;
+  const flip=()=>{flipped=!flipped;learnRender();};
+  $('#card').onclick=flip; $('#flip')&&($('#flip').onclick=flip);
+  $('#ok')&&($('#ok').onclick=()=>learnAnswer(true)); $('#no')&&($('#no').onclick=()=>learnAnswer(false));
+  $('#show')&&($('#show').onclick=()=>{ if(!atlasCats.includes(it.cat)){atlasCats.push(it.cat);drawAtlasCats();} $('#atlas-search').value=''; atlasSel=it.id; showTab('atlas'); atlasPick(it.id,true); });
+}
+function learnAnswer(ok){ const id=deck[cardIdx]; mark(id,ok); ok?sessionOk++:sessionNo++; if(!ok) deck.splice(Math.min(deck.length,cardIdx+4),0,id); cardIdx++; flipped=false; learnRender(); }
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input,select,textarea')) return;
+  if(!$('#tab-learn').hidden&&$('#card')){ if(e.code==='Space'){e.preventDefault();flipped=!flipped;learnRender();} else if(flipped&&e.key==='1') learnAnswer(false); else if(flipped&&e.key==='2') learnAnswer(true); }
+  if(!$('#tab-quiz').hidden&&!$('#quiz-run').hidden){ if(/^[1-4]$/.test(e.key)){ const b=document.querySelectorAll('.opt')[+e.key-1]; b&&!b.disabled&&b.click(); } else if(e.key==='Enter'&&$('#q-next')){ e.preventDefault(); $('#q-next').click(); } }
+});
+
+/* ================= ABFRAGE ================= */
+const MODES={
+  lat2de:{name:'Latein → Deutsch',ok:()=>true},
+  de2lat:{name:'Deutsch → Latein',ok:()=>true},
+  type:{name:'Latein eintippen',ok:()=>true},
+  where:{name:'Was ist hier markiert?',ok:i=>hasFig(i)},
+  find:{name:'Im Modell finden',ok:i=>hasFig(i)},
+  detail:{name:'Funktion / Gelenktyp',ok:i=>(i.cat==='muscles')||(i.cat==='joints'&&i.parts)},
+};
+const quizCats=['bones']; const quizModes=['lat2de','de2lat','where'];
+catChips($('#quiz-cats'),quizCats,{onChange:()=>{fillRegions($('#quiz-region'),quizCats,'');quizPoolInfo();}});
+fillRegions($('#quiz-region'),quizCats,'');
+function drawModes(){ const h=$('#quiz-modes'); h.innerHTML=Object.entries(MODES).map(([k,m])=>`<button class="chip" data-k="${k}" aria-pressed="${quizModes.includes(k)}">${m.name}</button>`).join('');
+  h.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{const k=b.dataset.k,i=quizModes.indexOf(k); if(i>=0){if(quizModes.length>1)quizModes.splice(i,1);}else quizModes.push(k); drawModes(); quizPoolInfo();}); }
+drawModes();
+$('#quiz-region').onchange=quizPoolInfo; $('#quiz-n').onchange=quizPoolInfo;
+function quizBase(){ const r=$('#quiz-region').value; return ITEMS.filter(i=>quizCats.includes(i.cat)&&(!r||i.region===r)); }
+function quizPool(){ return quizBase().filter(i=>quizModes.some(m=>MODES[m].ok(i))); }
+function quizPoolInfo(){ const n=quizPool().length; $('#quiz-pool').textContent=`${n} Begriffe passen zu deiner Auswahl`; $('#quiz-start').disabled=n<2; }
+quizPoolInfo();
+
+let Q=null; let quizFig=null;
+$('#quiz-start').onclick=()=>startQuiz(quizPool());
+function startQuiz(pool){
+  const n=+$('#quiz-n').value;
+  // schwächere Begriffe bevorzugen
+  const pick=shuffle(pool).sort((a,b)=>((prog[a.id]?.b||0)-(prog[b.id]?.b||0))+(Math.random()-.5)*2).slice(0,Math.min(n,pool.length));
+  Q={items:shuffle(pick).map(it=>{ const ms=quizModes.filter(m=>MODES[m].ok(it)); return {id:it.id,mode:ms.length?ms[Math.random()*ms.length|0]:'lat2de'}; }),idx:0,score:0,wrong:[],answered:false,pool:quizBase()};
+  $('#quiz-setup').hidden=true; $('#quiz-run').hidden=false;
+  quizFig=viewer; viewer.mount($('#quiz-plate'));
+  quizNext();
+}
+function distractors(it,field,k=3){
+  const fit=x=>x.id!==it.id&&x.cat===it.cat&&x[field]&&x[field]!==it[field]&&(field!=='type'||x.parts);
+  let cands=Q.pool.filter(fit);
+  const same=shuffle(cands.filter(x=>x.region===it.region)); const other=shuffle(cands.filter(x=>x.region!==it.region));
+  if(cands.length<k){ cands=ITEMS.filter(fit); other.push(...shuffle(cands)); }
+  const out=[]; const seen=new Set([it[field]]);
+  for(const x of [...same.slice(0,2),...other,...same.slice(2)]){ if(out.length>=k) break; if(!seen.has(x[field])){seen.add(x[field]);out.push(x);} }
+  return out;
+}
+const norm=s=>s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\(.*?\)/g,'').replace(/\b(mm?|lig|ligg|art|artt|os|ossa)\.?\s/g,m=>m.replace('.','')).replace(/[^a-z ]/g,' ').replace(/\s+/g,' ').trim();
+function lev(a,b){ const m=a.length,n=b.length; const d=Array.from({length:m+1},(_,i)=>[i]); for(let j=1;j<=n;j++) d[0][j]=j; for(let i=1;i<=m;i++) for(let j=1;j<=n;j++) d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1)); return d[m][n]; }
+function quizNext(){
+  if(Q.idx>=Q.items.length) return quizEnd();
+  const q=Q.items[Q.idx]; const it=byId[q.id]; Q.answered=false;
+  const panel=$('#quiz-panel'); const needFig=q.mode==='where'||q.mode==='find';
+  $('#quiz-plate').hidden=!needFig; $('#quiz-grid').style.gridTemplateColumns=needFig?'':'minmax(0,1fr)';
+  if(viewer.isolated) viewer.isolate(false); quizFig.quiz=true; quizFig.onPick=null; quizFig.target=null; quizFig.expect=null; quizFig.sel=null; quizFig.hideMarkers=false; quizFig.hideLabel=true; quizFig.setLayer('muscle',false); quizFig.resetZoom(true);
+  const head=`<div class="q-head"><span class="catbadge" style="--cc:${cvar(it.cat)}">${CATS[it.cat].name} · ${MODES[q.mode].name}</span><span class="num muted">Frage ${Q.idx+1} / ${Q.items.length} · ${Q.score} richtig</span></div><div class="progress"><i style="width:${Q.idx/Q.items.length*100}%"></i></div>`;
+  let body='';
+  const opts=(list,label)=>`<div class="opts">${list.map((x,k)=>`<button class="opt" data-id="${x.id}" data-v="${esc(label(x))}"><kbd>${k+1}</kbd>${label(x)}</button>`).join('')}</div>`;
+  if(q.mode==='lat2de'){ const ch=shuffle([it,...distractors(it,'de')]); body=`<div class="q-prompt">Was bedeutet</div><div class="q-term lat">${esc(it.lat)}</div>`+opts(ch,x=>esc(x.de)); }
+  else if(q.mode==='de2lat'){ const ch=shuffle([it,...distractors(it,'lat')]); body=`<div class="q-prompt">Wie heißt auf Latein</div><div class="q-term">${esc(it.de)}</div>`+opts(ch,x=>`<span class="lat">${esc(x.lat)}</span>`); }
+  else if(q.mode==='detail'){
+    const f=it.cat==='muscles'?'f':'type'; const ch=shuffle([it,...distractors(it,f)]);
+    body=`<div class="q-prompt">${it.cat==='muscles'?'Welche Funktion hat':'Welcher Gelenktyp ist'}</div><div class="q-term"><span class="lat">${esc(it.lat)}</span><div class="muted" style="font-size:1rem;font-family:var(--f-body)">${esc(it.de)}</div></div>`+opts(ch,x=>esc(x[f]));
+  }
+  else if(q.mode==='type'){ body=`<div class="q-prompt">Schreibe den lateinischen Namen von</div><div class="q-term">${esc(it.de)}</div><form class="typebox" id="tform"><input type="text" id="tin" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="z. B. Os frontale"><button class="btn">Prüfen</button></form><p class="muted" style="font-size:.85rem;margin-top:6px">Klammern und Groß-/Kleinschreibung sind egal. Kleine Tippfehler werden als „fast richtig“ gewertet.</p>`; }
+  else if(q.mode==='where'){
+    const ch=shuffle([it,...distractors(it,'lat')]);
+    quizFig.setItems([it]); quizFig.hideMarkers=true; quizFig.target=it.id; quizFig.select(null); quizFig.zoomToItem(it);
+    body=`<div class="q-prompt">Welche Struktur ist im Modell farbig hervorgehoben?</div><div class="q-term" style="font-size:1.1rem;font-family:var(--f-body)">Du kannst das Modell drehen und zoomen.</div>`+opts(ch,x=>`<span class="lat">${esc(x.lat)}</span> <span class="muted">– ${esc(x.de)}</span>`);
+  }
+  else if(q.mode==='find'){
+    const pool=Q.pool.filter(x=>hasFig(x)&&x.cat===it.cat);
+    quizFig.setLayer('muscle',it.cat==='muscles'); quizFig.expect=it.id; quizFig.setItems(pool); quizFig.setView(it.view);
+    body=`<div class="q-prompt">Klicke im Modell auf</div><div class="q-term"><span class="lat">${esc(it.lat)}</span><div class="muted" style="font-size:1rem;font-family:var(--f-body)">${esc(it.de)}</div></div><p class="muted">Tipp: am besten von <b>${it.view==='a'?'vorne':'hinten'}</b> zu sehen. Du kannst das Modell drehen und zur Maus hin zoomen.</p><div id="find-fb"></div>`;
+    quizFig.onPick=(hit)=>{ if(Q.answered) return; if(!hit) return; const ok=hit.id===it.id; quizFig.sel=hit.id; quizFig.target=it.id; quizFig.hideLabel=false; quizFig.renderMarkers(); if(!ok){ quizFig.sel=it.id; quizFig.renderMarkers(); quizFig.zoomToItem(it); } answer(ok, ok?'':`Du hast <span class="lat">${esc(hit.lat)}</span> (${esc(hit.de)}) gewählt.`); };
+  }
+  panel.innerHTML=head+body+`<div id="q-fb"></div>`;
+  panel.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{ if(Q.answered) return; const ok=b.dataset.id===it.id;
+    panel.querySelectorAll('.opt').forEach(o=>{o.disabled=true; if(o.dataset.id===it.id) o.classList.add('right');}); if(!ok) b.classList.add('wrong');
+    if(q.mode==='where'){ quizFig.sel=it.id; quizFig.hideLabel=false; quizFig.renderMarkers(); }
+    answer(ok); });
+  if(q.mode==='type'){ const inp=$('#tin'); setTimeout(()=>inp.focus(),30); $('#tform').onsubmit=e=>{ e.preventDefault(); if(Q.answered) return; const a=norm(inp.value), t=norm(it.lat); if(!a) return;
+    const alts=[t,...it.lat.split('/').map(norm)]; const dist=Math.min(...alts.map(x=>lev(a,x))); const ok=dist===0; const almost=!ok&&dist<=Math.max(1,Math.floor(t.length/8));
+    inp.disabled=true; answer(ok||almost, almost?`Fast richtig – genau geschrieben: <span class="lat">${esc(it.lat)}</span>`:''); }; }
+}
+function answer(ok,extra=''){
+  Q.answered=true; const q=Q.items[Q.idx]; const it=byId[q.id]; mark(it.id,ok); if(ok) Q.score++; else Q.wrong.push(it.id);
+  const fb=$('#q-fb');
+  fb.innerHTML=`<div class="feedback ${ok?'ok':'no'}"><b>${ok?'Richtig!':'Leider falsch.'}</b> ${extra} <span class="lat">${esc(it.lat)}</span> = ${esc(it.de)}${it.cat==='muscles'?`<br><small>Ursprung: ${esc(it.o)} · Ansatz: ${esc(it.i)} · Funktion: ${esc(it.f)}</small>`:it.type?`<br><small>${esc(it.type)}${it.parts?' · '+esc(it.parts):''}</small>`:it.info?`<br><small>${esc(it.info)}</small>`:''}${it.mn?`<br><small><b>Merkhilfe:</b> ${esc(it.mn)}</small>`:''}</div>
+    <div class="card-actions" style="justify-content:flex-start"><button class="btn" id="q-next">${Q.idx+1<Q.items.length?'Weiter':'Auswertung'}</button><button class="btn ghost" id="q-quit">Abbrechen</button></div>`;
+  $('#q-next').onclick=()=>{Q.idx++;quizNext();}; $('#q-quit').onclick=quizQuit; $('#q-next').focus({preventScroll:true});
+}
+function quizQuit(){ $('#quiz-run').hidden=true; $('#quiz-setup').hidden=false; quizPoolInfo(); }
+function quizEnd(){
+  $('#quiz-plate').hidden=true; $('#quiz-grid').style.gridTemplateColumns='minmax(0,1fr)';
+  const n=Q.items.length, pct=Math.round(Q.score/n*100);
+  const verdict=pct>=90?'Hervorragend!':pct>=70?'Gut gemacht.':pct>=50?'Solide – da geht noch was.':'Weiter üben – die Karteikarten helfen.';
+  $('#quiz-panel').innerHTML=`<div class="label">Auswertung</div><div class="score">${Q.score} / ${n}</div><p style="font-size:1.1rem;margin:0 0 12px">${pct} % · ${verdict}</p>
+    ${Q.wrong.length?`<div class="label">Diese solltest du wiederholen</div><ul class="wronglist">${[...new Set(Q.wrong)].map(id=>`<li><span class="lat">${esc(byId[id].lat)}</span> – ${esc(byId[id].de)}</li>`).join('')}</ul>`:''}
+    <div class="card-actions" style="justify-content:flex-start;margin-top:16px">${Q.wrong.length?'<button class="btn" id="q-retry">Fehler wiederholen</button>':''}<button class="btn ${Q.wrong.length?'ghost':''}" id="q-again">Neue Abfrage</button></div>`;
+  $('#q-again').onclick=quizQuit;
+  $('#q-retry')&&($('#q-retry').onclick=()=>startQuiz([...new Set(Q.wrong)].map(id=>byId[id])));
+}
+
+/* ================= FORTSCHRITT ================= */
+function renderStats(){
+  const rows=Object.entries(CATS).map(([k,c])=>{ const its=ITEMS.filter(i=>i.cat===k); const m=its.filter(i=>mastered(i.id)).length; const s=its.filter(i=>prog[i.id]&&!mastered(i.id)).length;
+    return `<div class="stat-row"><span class="catbadge" style="--cc:${cvar(k)}">${c.name}</span><div class="bar"><i style="width:${m/its.length*100}%;background:${cvar(k)}"></i><i style="width:${s/its.length*100}%;background:${cvar(k)};opacity:.35"></i></div><span class="num">${m} / ${its.length} gekonnt</span></div>`; }).join('');
+  const all=ITEMS.length, m=ITEMS.filter(i=>mastered(i.id)).length;
+  const weak=ITEMS.filter(i=>prog[i.id]?.w).sort((a,b)=>(prog[b.id].w-prog[b.id].r)-(prog[a.id].w-prog[a.id].r)).slice(0,10);
+  $('#stats').innerHTML=`<div><div class="label">Gesamt</div><div class="score">${m} <span class="muted" style="font-size:1.4rem">von ${all} Begriffen gekonnt</span></div></div>${rows}
+   <div><div class="label" style="margin-top:8px">Am häufigsten falsch</div>${weak.length?`<ul class="wronglist">${weak.map(i=>`<li><span class="lat">${esc(i.lat)}</span> – ${esc(i.de)} <span class="muted num">(${prog[i.id].w}× falsch, ${prog[i.id].r}× richtig)</span></li>`).join('')}</ul>`:'<p class="muted">Noch keine Fehler – leg mit „Lernen“ oder „Abfrage“ los.</p>'}</div>`;
+}
+$('#reset').onclick=()=>{$('#reset-confirm').hidden=false;};
+$('#reset-no').onclick=()=>{$('#reset-confirm').hidden=true;};
+$('#reset-yes').onclick=()=>{prog={};save();$('#reset-confirm').hidden=true;renderStats();};
+
+learnBuild();
+try{ const t=localStorage.getItem(STORE_KEY+'-tab'); if(t&&$('#tab-'+t)) showTab(t); }catch(e){}
+</script>
+
+</body>
+</html>

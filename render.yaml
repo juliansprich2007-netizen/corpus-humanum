@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: corpus-humanum
+    runtime: static
+    buildCommand: ""
+    staticPublishPath: ./
+    headers:
+      - path: /models/*
+        name: Cache-Control
+        value: public, max-age=604800
