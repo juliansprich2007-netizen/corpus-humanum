@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { computeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
-import { MAP } from './map.js?v=3';
+import { MAP } from './map.js?v=6';
 
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -125,10 +125,11 @@ export class Viewer {
   /* ---------- Modell laden ---------- */
   async load(){
     const bar=this.el.querySelector('.v-load-b i');
-    const idx=await (await fetch(this.base+'index.json')).json();
+    const idx=await (await fetch(this.base+'index.json?v=6')).json();
     this.idx=idx; this.parts=idx.parts.map((p,i)=>({i,id:p[0],name:p[1],g:p[2],file:p[3],vo:p[4],vc:p[5],no:p[6],io:p[7],ic:p[8],it:p[9],c:new THREE.Vector3(...p[10])}));
     this.concepts=idx.concepts;
-    const order=['bone','teeth','cart','lig','skin','muscle'];
+    // Muskeln sind der größte Teil der Daten und werden erst geladen, wenn sie gebraucht werden (ensureMuscles)
+    const order=['bone','teeth','cart','lig','skin'];
     const total=order.reduce((s,f)=>s+(idx.sizes[f]||0),0); let done=0;
     for(const f of order){
       if(!idx.files[f]) continue;
@@ -140,18 +141,42 @@ export class Viewer {
     }
     this.el.querySelector('.v-load').hidden=true; this.ready=true;
     this.buildItemIndex(); this.applyVisibility(); this.renderMarkers();
-    // Raycast-Beschleunigung im Leerlauf aufbauen
-    const meshes=this.parts.filter(p=>p.mesh).map(p=>p.mesh); let k=0;
+    this.buildBVH();
+    this.onReady&&this.onReady();
+  }
+  buildBVH(){ // Raycast-Beschleunigung im Leerlauf aufbauen
+    const meshes=this.parts.filter(p=>p.mesh&&!p.mesh.geometry.boundsTree).map(p=>p.mesh); let k=0;
     const step=()=>{ const t=performance.now(); while(k<meshes.length&&performance.now()-t<12){ meshes[k++].geometry.computeBoundsTree(); } if(k<meshes.length) setTimeout(step,0); };
     step();
-    this.onReady&&this.onReady();
+  }
+  needsMuscles(){ if(this.musclesLoaded||!this.parts) return false;
+    if(this.layers.muscle) return true;
+    return [...this.activeParts().keys()].some(i=>this.parts[i].g==='muscle'); }
+  ensureMuscles(){
+    if(this.musclesLoaded) return Promise.resolve(); if(this.musclePromise) return this.musclePromise;
+    const box=this.el.querySelector('.v-load'), bar=box.querySelector('.v-load-b i'), size=this.idx.sizes.muscle||1;
+    box.hidden=false; box.querySelector('.v-load-t').textContent='Muskeln werden geladen …'; bar.style.width='0%';
+    this.musclePromise=this.fetchProgress(this.base+this.idx.files.muscle,n=>{ bar.style.width=(n/size*100).toFixed(1)+'%'; }).then(buf=>{
+      this.buildGroup('muscle',buf); this.musclesLoaded=true; box.hidden=true;
+      for(const inf of Object.values(this.info||{})) inf.pt=null; // Punkte auf Muskeln neu berechnen
+      this.applyVisibility(); this.renderMarkers(); this.buildBVH();
+      const pz=this.pendingZoom; this.pendingZoom=null; if(pz&&(pz===this.sel||pz===this.target)) this.zoomToItem(this.itemById[pz]);
+    }).catch(e=>{ console.error(e); box.querySelector('.v-load-t').textContent='Die Muskeln konnten nicht geladen werden. Bitte Seite neu laden.'; this.musclePromise=null; });
+    return this.musclePromise;
   }
   async fetchProgress(url,cb){
     const r=await fetch(url); if(!r.ok) throw new Error(url+' '+r.status);
-    if(!r.body||!r.body.getReader) return await r.arrayBuffer();
-    const rd=r.body.getReader(), chunks=[]; let n=0;
-    for(;;){ const {done,value}=await rd.read(); if(done) break; chunks.push(value); n+=value.length; cb(n); }
-    const out=new Uint8Array(n); let o=0; for(const c of chunks){ out.set(c,o); o+=c.length; } return out.buffer;
+    let out;
+    if(!r.body||!r.body.getReader) out=new Uint8Array(await r.arrayBuffer());
+    else { const rd=r.body.getReader(), chunks=[]; let n=0;
+      for(;;){ const {done,value}=await rd.read(); if(done) break; chunks.push(value); n+=value.length; cb(n); }
+      out=new Uint8Array(n); let o=0; for(const c of chunks){ out.set(c,o); o+=c.length; } }
+    // Dateien liegen gzip-gepackt auf dem Server; falls der Server sie schon entpackt hat, fehlt die gzip-Kennung
+    if(out[0]===0x1f&&out[1]===0x8b){
+      if(typeof DecompressionStream!=='undefined') return await new Response(new Blob([out]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+      const pako=await import('https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.esm.mjs'); return pako.ungzip(out).buffer;
+    }
+    return out.buffer;
   }
   buildGroup(file,buf){
     const q=this.idx.q;
@@ -237,6 +262,7 @@ export class Viewer {
   }
   applyVisibility(){
     if(!this.parts) return;
+    if(this.ready&&this.needsMuscles()) this.ensureMuscles();
     const act=this.activeParts(); const iso=this.isolated; this.hovered=null;
     const muscleSel=act.size>0; // bei einer Auswahl werden die übrigen Muskeln durchsichtig
     for(const p of this.parts){ const m=p.mesh; if(!m) continue;
@@ -317,6 +343,7 @@ export class Viewer {
   resetZoom(front=false){ if(!this.body) return; if(this.isolated) this.isolate(false); const g=this.gb(); g.target=this.body.center.clone(); g.dist=this.home; if(front){ g.az=0; g.el=.05; } this.animate(); }
   zoomToItem(it,f){
     if(!this.body||!this.info?.[it.id]) return; const inf=this.info[it.id], g=this.gb();
+    if(!this.musclesLoaded&&this.info[it.id].all.some(i=>this.parts[i].g==='muscle')){ this.pendingZoom=it.id; this.ensureMuscles(); return; }
     const p=this.itemPoint(it); let c,r;
     if(p&&(inf.f.pt||inf.f.j)){ c=p; r=110; } else { const s=this.bbox(inf.focus.length?inf.focus:inf.all).getBoundingSphere(new THREE.Sphere()); c=s.center; r=Math.max(60,s.radius); }
     g.target=c.clone(); g.dist=THREE.MathUtils.clamp(r/Math.tan(THREE.MathUtils.degToRad(15))*1.35,180,this.home);
